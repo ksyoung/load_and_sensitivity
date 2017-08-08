@@ -43,7 +43,7 @@ element_out_df = pandas.DataFrame(index=element_df.index, columns=[
 
 
 # wrap main calculation as function
-def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq, verbose = True):
+def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq, verbose = True, location=0):
   # inputs are:
     # data frames (input, elements out, results)
     # band (this may change...)
@@ -152,17 +152,17 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     print 'total NET: ', net_total
 
 
-  results_df.spill_eff[i]   = spill
-  results_df.illum_eff[i]   = illum
-  results_df.FWHM[i]        = FWHM
-  results_df.total_pow[i]   = p_opt
-  results_df.NEP_total[i]   = nep_total
-  results_df.NET_total[i]   = net_total
-  results_df.NEP_poisson[i] = nep_all_poisson_sq**.5
-  results_df.NEP_photon[i]  = nep_photon 
-  results_df.NEP_phonon[i]  = nep_phonon
-  results_df.NEP_johnson[i] = nep_johnson
-  results_df.NEP_readout[i] = nep_readout 
+  results_df.spill_eff[location]   = spill
+  results_df.illum_eff[location]   = illum
+  results_df.FWHM[location]        = FWHM
+  results_df.total_pow[location]   = p_opt
+  results_df.NEP_total[location]   = nep_total
+  results_df.NET_total[location]   = net_total
+  results_df.NEP_poisson[location] = nep_all_poisson_sq**.5
+  results_df.NEP_photon[location]  = nep_photon 
+  results_df.NEP_phonon[location]  = nep_phonon
+  results_df.NEP_johnson[location] = nep_johnson
+  results_df.NEP_readout[location] = nep_readout 
 
   return element_out_df, results_df
 
@@ -190,7 +190,7 @@ if settings.mult_bands is True:
     band = np.array([bands.nu_low[i],bands.nu_high[i]])*1e9
     c_freq = '%g_GHz' %center_nu
     element_out_df, results_df = power_noise_calculation(element_df, element_out_df,
-                                 results_df, band, c_freq)
+                                 results_df, band, c_freq,location=i)
 
 else:
   results_df = pandas.DataFrame(index=[0], columns=['Band','nu','nu_lo',
