@@ -39,7 +39,8 @@ def planck_func(nu,T):
          (np.exp( (h_ * nu) / (k_b * T)) - 1) 
   return val
 
-def planck_func_lambda_sq(nu,T):  
+def planck_func_lambda_sq(nu,T):
+  # really is power from an element.  
   return 2 * h_ * nu / (np.exp((h_ * nu) / (k_b * T)) - 1)
 
 def planck_grey(nu,T,beta,nu_0):
@@ -77,6 +78,7 @@ def losstan_to_absorption(freq,loss_tan,index,thick):
   # assume 1 freq at band center. usually a fair-ish average.
   # all SI units.
   # abs = emiss
+  pass
   return 1-np.e**(-thick*loss_tan*2.0*np.pi*index*freq/c)
 
 def calc_mirror_transmission(emiss150, band, metal='alum'):
@@ -124,6 +126,20 @@ def get_spill_illum_effs(edge_db, f_num):
   illum = 2. * (1. / np.tan(theta_edge*0.5)**2) * scint.quad(efield_integrand_illum_top \
           ,0,theta_edge,args=(sigma_sq))[0]**2 / mirror_field_sq
 
+  return spill, illum
+
+def get_spill_illum_effs_from_theta_px(theta_px, f_num): 
+  # integrate e-field over mirror and over all space, divide to get spill.
+  # compare to flat to get illumination.
+  theta_edge = np.arctan(1./(2.*f_num))
+  sigma_sq = 0 # ??? need to convert theta_px into sigma of a gaussian.  In electric field.
+  mirror_field_sq = scint.quad(efield_integrand,0,theta_edge,args=(sigma_sq))[0]
+  #print edge_power,theta_edge, sigma_sq,mirror_field_sq
+  spill = mirror_field_sq / scint.quad(efield_integrand,0,np.pi,args=(sigma_sq))[0]
+  illum = 2. * (1. / np.tan(theta_edge*0.5)**2) * scint.quad(efield_integrand_illum_top \
+          ,0,theta_edge,args=(sigma_sq))[0]**2 / mirror_field_sq
+  print 'NOT WORKING YET!!'
+  sys.exit()
   return spill, illum
 
 def poisson_integrand_lambda_sq(nu,T):

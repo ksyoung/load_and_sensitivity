@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import numpy as np
 class Class(object):
@@ -14,9 +15,9 @@ settings.freq = '150_GHz'
 settings.version = 'example'
 
 # Telescope/ Receiver Optical Parameters
-settings.band = [133.,167.]  # GHz
-settings.band = np.array(settings.band)*1e9  # Hz
-settings.c_lambda = 299792458 / np.mean(settings.band)  # in m.
+settings.mult_bands = True
+#settings.band = [133.,167.]  # GHz, lower, upper.
+#settings.band = np.array(settings.band)*1e9  # Hz
 
 settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary = 1.25m radius)
 settings.f_number = 2.0  # 
@@ -34,16 +35,20 @@ settings.bolo_resistance = settings.bolo_Rn*settings.bias_point  # Ohms
 settings.readout_noise_amps = 7e-12 # Amps*rt(sec), number from Franky for scaling readout noise.
 
 # Paths
-settings.base_path = '/home/astro/kyoung/Documents/Telescope_loading_and_noise/'
+settings.base_path = '/home/astro/kyoung/Documents/load_and_sensitivity/'
 settings.elements_path = os.path.join(settings.base_path,
-                 '/inputs/example_elements.csv')  # all telescope surfaces, lenses, etc.
-settings.elements_out_path = os.path.join(settings.base_path,
-                 '/outputs/%s_%s_elements_out.csv ' %(settings.freq, settings.version))  # data that gets saved.
+                 'inputs/example_elements.csv')  # all telescope surfaces, lenses, etc.
 
+# now being defined in code.
+#settings.elements_out_path = os.path.join(settings.base_path,
+#                 'outputs/%s_%s_elements_out.csv ' %(settings.freq, settings.version))  # data that gets saved.
+
+settings.bands_path = os.path.join(settings.base_path,
+                 'inputs/CMBP_bands.csv')  # csv of bands.
 
 
 # unneeded stuff below this line.
-
+'''
 # Run time paramters
 settings.name = '150'
 settings.version = 'greg_f3'
@@ -130,4 +135,4 @@ settings.mapping_speed_output_data_path = os.path.join(settings.base_path, 'mapp
 settings.num_pixels_output_png_path = os.path.join(settings.base_path, 'num_pixels_%sGHz_%s.png' % (str(int(settings.frequency)), settings.version))
 settings.throughput_path_out = os.path.join(settings.base_path, 'throughput_%sGHz_%s.csv' % (str(int(settings.frequency)), settings.version))
 
-
+'''
