@@ -103,10 +103,14 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     element_out_df.nep_bunch[i] = np.sqrt(bunch_nepsq)
 
   # save elements data frame
-  element_out_df.to_csv(os.path.join(settings.base_path, 
-                 'outputs/%s/%s_elements_out.csv ' %(settings.version,c_freq)), 
-                 index=True)
+  save_path = os.path.join(settings.base_path,'outputs/%s' %settings.version)
+  
+  
+  if not os.path.exists(save_path):
+    os.mkdir(save_path)
 
+  element_out_df.to_csv(os.path.join(save_path, '%s_elements_out.csv' %(c_freq)), index=True)
+    
   p_opt = np.sum(element_out_df.power_absorb)
 
   # calc NEP_bunch for full system.
