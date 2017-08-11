@@ -72,17 +72,19 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     # calc efficiency (i.e. transmission through that layer) for element. save to new throughput frame
     if ('stop' in elem) or ('Stop' in elem):
       element_out_df.transmission[i] = spill
-      cum_eff = np.prod(element_out_df.transmission[0:i])*(1-spill) # since 1-spill portion of lyot is seen by detector side elements.
     elif 'CMB' in elem:
       element_out_df.transmission[i] = 1  # due to how I'm using emissivity = absorbtion
-      cum_eff = np.prod(element_out_df.transmission[0:(i+1)])
     else:
       element_out_df.transmission[i] = 1-emissivity-element_df.reflect_loss[i]
-      cum_eff = np.prod(element_out_df.transmission[0:(i+1)])
-    #cum_eff includes current element, thus cum_eff is acturally the efficiency for the next element. by Qi (Aug,2017)
-    element_out_df.cum_eff[0] = 1
-    if i < (len(element_df)-1):
-        element_out_df.cum_eff[i+1] = cum_eff
+
+    # calc cumulated efficiency (i.e. power emitted from this layer to detector)
+    if i == 0:
+        cum_eff = 1 # since there is no element between the first element and detector
+    elif ('stop' in elem) or ('Stop' in elem):
+        cum_eff = np.prod(element_out_df.transmission[0:i])*(1-spill) # since 1-spill portion of lyot is seen by detector side elements.
+    else:
+        cum_eff = np.prod(element_out_df.transmission[0:i])
+    element_out_df.cum_eff[i] = cum_eff
 
   # calc emitted power per element.  save to new throughput frame
   # calc NEP in detector per element.  (uses cum_eff)
