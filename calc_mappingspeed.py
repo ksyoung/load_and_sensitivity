@@ -79,7 +79,10 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     else:
       element_out_df.transmission[i] = 1-emissivity-element_df.reflect_loss[i]
       cum_eff = np.prod(element_out_df.transmission[0:(i+1)])
-    element_out_df.cum_eff[i] = cum_eff
+    #cum_eff includes current element, thus cum_eff is acturally the efficiency for the next element. by Qi (Aug,2017)
+    element_out_df.cum_eff[0] = 1
+    if i < (len(element_df)-1):
+        element_out_df.cum_eff[i+1] = cum_eff
 
   # calc emitted power per element.  save to new throughput frame
   # calc NEP in detector per element.  (uses cum_eff)
@@ -90,15 +93,15 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
                  emissivity, band)
       # noises are NEP**2  !!!
       poisson_nepsq, poi_err, bunch_nepsq, bunch_err = lf.NEP_photon_per_element(
-                   element_df.temperature[i], emissivity, band, cum_eff)
+                   element_df.temperature[i], emissivity, band, element_out_df.cum_eff[i])
     else:
       power_emit,error = lf.power_emitted_per_element(element_df.temperature[i],
                          emissivity, band)
       poisson_nepsq, poi_err, bunch_nepsq, bunch_err = lf.NEP_photon_per_element(
-                   element_df.temperature[i], emissivity, band, cum_eff)
+                   element_df.temperature[i], emissivity, band, element_out_df.cum_eff[i])
 
     element_out_df.power_emit[i] = power_emit
-    element_out_df.power_absorb[i] = power_emit*cum_eff
+    element_out_df.power_absorb[i] = power_emit*element_out_df.cum_eff[i]
     element_out_df.nep_poisson[i] = np.sqrt(poisson_nepsq)
     element_out_df.nep_bunch[i] = np.sqrt(bunch_nepsq)
 
@@ -132,9 +135,8 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
                                        v_bias, gamma, settings.readout_noise_amps)
 
   nep_total = np.sum(np.array([nep_photon,nep_phonon,nep_johnson,nep_readout])**2.)**0.5
-
   # convert NEP to NET
-  net_total = lf.nep_to_net_Kcmb(nep_total,cum_eff,band)  # K_cmb / rt(Hz)
+  net_total = lf.nep_to_net_Kcmb(nep_total,element_out_df.cum_eff[len(element_df)-1],band)  # K_cmb / rt(Hz)
 
 
   # write out NEPs
@@ -143,7 +145,7 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     print 'Running :    ', c_freq, settings.version 
     print 'spillover: ', spill
     print 'beam FWHM: ', FWHM
-    print 'eff@ bolo: ', cum_eff
+    print 'eff@ bolo: ', element_out_df.cum_eff[len(element_df)-1]
     print 'illumin  : ', illum
     print 'total pow: ', p_opt
     print 'all bunch: ', nep_all_bunch_sq**.5
@@ -198,8 +200,8 @@ if settings.mult_bands is True:
 
 else:
   results_df = pandas.DataFrame(index=[0], columns=['Band','nu','nu_lo',
-                      'nu_high','spill_eff','illum_eff', 'total_pow','NEP_total',
-                      'NET_total', 'NEP_poisosn', 'NEP_photon', 'NEP_phonon', 
+                      'nu_high','spill_eff','illum_eff','FWHM', 'total_pow','NEP_total',
+                      'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon', 
                       'NEP_johnson','NEP_readout'])
   element_out_df, results_df = power_noise_calculation(element_df, element_out_df, 
                                results_df, settings.band, settings.freq)
