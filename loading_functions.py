@@ -5,8 +5,8 @@ This is the stripped down version to do only what I need, but no more.
 
 
 
-This file is functions to calculate load per element, spillover, ???,
-etc.
+This file is functions to calculate load per element, spillover, noise, bolo properties, 
+ ..., etc.
 
 Called by calc_mapping_speed.py
 
@@ -119,7 +119,7 @@ def get_spill_illum_effs(edge_db, f_num):
   # compare to flat to get illumination.
   edge_power = 10**(edge_db*-.1)
   theta_edge = np.arctan(1./(2.*f_num))
-  sigma_sq = theta_edge**2 / (- np.log(edge_power))
+  sigma_sq = theta_edge**2 / (- np.log(edge_power))  ## converting to sigma of the guassian beam. E_field = exp[-x**2/(2*sigma**2)]
   mirror_field_sq = scint.quad(efield_integrand,0,theta_edge,args=(sigma_sq))[0]
   #print edge_power,theta_edge, sigma_sq,mirror_field_sq
   spill = mirror_field_sq / scint.quad(efield_integrand,0,np.pi,args=(sigma_sq))[0]
@@ -132,15 +132,23 @@ def get_spill_illum_effs_from_theta_px(theta_px, f_num):
   # integrate e-field over mirror and over all space, divide to get spill.
   # compare to flat to get illumination.
   theta_edge = np.arctan(1./(2.*f_num))
-  sigma_sq = 0 # ??? need to convert theta_px into sigma of a gaussian.  In electric field.
+  sigma_sq = 0.5 * theta_px**2.  # this is sigam of E-field. assuming theta_px is where E-field is down by 1/e. or intensity is down by 1/e**2.
   mirror_field_sq = scint.quad(efield_integrand,0,theta_edge,args=(sigma_sq))[0]
   #print edge_power,theta_edge, sigma_sq,mirror_field_sq
   spill = mirror_field_sq / scint.quad(efield_integrand,0,np.pi,args=(sigma_sq))[0]
   illum = 2. * (1. / np.tan(theta_edge*0.5)**2) * scint.quad(efield_integrand_illum_top \
           ,0,theta_edge,args=(sigma_sq))[0]**2 / mirror_field_sq
-  print 'NOT WORKING YET!!'
+  print 'NOT TESTED YET!!'
   sys.exit()
   return spill, illum
+
+def theta_px_from_edge_db():
+  pass
+  return 'FAIL'
+
+def edge_db_from_theta_px():
+  pass
+  return 'FAIL'
 
 def poisson_integrand_lambda_sq(nu,T):
   # an extra 2 * h_ * nu over power integrand
@@ -214,7 +222,7 @@ def calc_bolo_noises(G_dyn,t_c, R_bolo_biased, v_bias, gamma, readout_noise_amps
   # rest are obvious? i hope...
   phonon = np.sqrt(4 * gamma * k_b * t_c ** 2 * G_dyn)
   johnson = np.sqrt(4 * k_b * t_c / R_bolo_biased) * v_bias
-  readout = readout_noise_amps*v_bias/np.sqrt(2)
+  readout = readout_noise_amps*v_bias/np.sqrt(2) # should call Franky's readout noise calc function.
 
   return phonon,johnson,readout
 

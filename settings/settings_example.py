@@ -15,9 +15,9 @@ settings.freq = '150_GHz'
 settings.version = 'example'
 
 # Telescope/ Receiver Optical Parameters
-settings.mult_bands = True
-#settings.band = [133.,167.]  # GHz, lower, upper.
-#settings.band = np.array(settings.band)*1e9  # Hz
+settings.mult_bands = False#True
+settings.band = [133.,167.]  # GHz, lower, upper.
+settings.band = np.array(settings.band)*1e9  # Hz
 
 settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary = 1.25m radius)
 settings.f_number = 2.0  # 
@@ -37,7 +37,7 @@ settings.readout_noise_amps = 7e-12 # Amps*rt(sec), number from Franky for scali
 # Paths
 settings.base_path = '/home/astro/kyoung/Documents/load_and_sensitivity/'
 settings.elements_path = os.path.join(settings.base_path,
-                 'inputs/example_elements.csv')  # all telescope surfaces, lenses, etc.
+                 'inputs/150GHz_test_elements.csv')  # all telescope surfaces, lenses, etc.
 
 # now being defined in code.
 #settings.elements_out_path = os.path.join(settings.base_path,
