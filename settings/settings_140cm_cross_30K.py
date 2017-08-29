@@ -31,7 +31,7 @@ settings.f_number = 2.14  #
 settings.edge_db = 25   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
 
 # Bolo parameters
-settings.t_bath = 0.25  # Kelvin
+settings.t_bath = 0.250  # Kelvin
 settings.safety_factor = 2.5  # Unitless, ratio of p_sat to p_opt
 settings.n = 3.0            # thermal power law exponent (EBEX was ~2)
 settings.bolo_Rn = 1.33  # Ohms.  TES resistance warm.
@@ -57,15 +57,15 @@ settings.johnson_and_readout_factor = None  # use un-modified noise theory.
 # DfMUX general setup
 dfmux_settings['DAN_firmware'] = True
 dfmux_settings['DAN_parser'] = False
-dfmux_settings['bitshift'] = 5  # can be 8 for 24 bit.
+dfmux_settings['bitshift'] = 8  # can be 8 for 24 bit.
 dfmux_settings['fir'] = 6
 dfmux_settings['fsamp'] = 25e6/2**(11+dfmux_settings['fir'])
 
 # DAC/ADC settings
 dfmux_settings['fc'] = 500000.
-dfmux_settings['Gc'] = 2
+dfmux_settings['Gc'] = 1
 dfmux_settings['fn'] = dfmux_settings['fc']
-dfmux_settings['Gn'] = 1
+dfmux_settings['Gn'] = 0
 dfmux_settings['fd'] = dfmux_settings['fc']
 dfmux_settings['Gd'] = 0
 

@@ -19,11 +19,11 @@ settings = Class()
 settings.freq = 'All_GHz'
 settings.version = 'open_midstop'
 settings.name = '1.4m_open_midstop'
-settings.verbose = True
+settings.verbose =  True
 
 # Telescope/ Receiver Optical Parameters
 settings.mult_bands = True
-#settings.band = [133.,167.]  # GHz, lower, upper.  150, width = 34.
+#settings.band = [133.,167.]  # GHz, lower, upper.  150, width = 34
 #settings.band = np.array(settings.band)*1e9  # Hz
 
 settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary = 1.25m radius)
@@ -32,7 +32,7 @@ settings.f_number = 1.5  #
 settings.edge_db = 10   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
 
 # Bolo parameters
-settings.t_bath = 0.25  # Kelvin
+settings.t_bath = 0.250  # Kelvin
 settings.safety_factor = 2.5  # Unitless, ratio of p_sat to p_opt
 settings.n = 3.0            # thermal power law exponent (EBEX was ~2)
 settings.bolo_Rn = 1.33  # Ohms.  TES resistance warm.
@@ -58,15 +58,15 @@ settings.johnson_and_readout_factor = None  # use un-modified noise theory.
 # DfMUX general setup
 dfmux_settings['DAN_firmware'] = True
 dfmux_settings['DAN_parser'] = False
-dfmux_settings['bitshift'] = 5  # can be 8 for 24 bit.
+dfmux_settings['bitshift'] = 8  # can be 8 for 24 bit.
 dfmux_settings['fir'] = 6
 dfmux_settings['fsamp'] = 25e6/2**(11+dfmux_settings['fir'])
 
 # DAC/ADC settings
 dfmux_settings['fc'] = 500000.
-dfmux_settings['Gc'] = 2
+dfmux_settings['Gc'] = 1
 dfmux_settings['fn'] = dfmux_settings['fc']
-dfmux_settings['Gn'] = 1
+dfmux_settings['Gn'] = 0
 dfmux_settings['fd'] = dfmux_settings['fc']
 dfmux_settings['Gd'] = 0
 

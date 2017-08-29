@@ -164,6 +164,13 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
   dfmux_settings['An'] = dfmux_settings['Ac']/3. * \
      (R_gain[dfmux_settings['Gn']] + 100.) / (R_gain[dfmux_settings['Gc']] + 100.)
 
+
+  #print dfmux_settings['Ac']
+  #print dfmux_settings['An']
+  #pdb.set_trace()
+
+  
+
   # NEPs, bolometer  (Karl's method.  inaccurate readout)
   nep_phonon,nep_johnson,nep_readout_KY = lf.calc_bolo_noises(G_dyn,t_c, settings.bolo_resistance, 
                                        v_bias, gamma, settings.readout_noise_amps)
@@ -233,23 +240,24 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     print 'total NET: ', net_total
 
 
-  results_df.spill_eff[location]   = spill
-  results_df.illum_eff[location]   = illum
-  results_df.FWHM[location]        = FWHM
-  results_df.total_pow[location]   = p_opt
-  results_df.NEP_total[location]   = nep_total
-  results_df.NET_total[location]   = net_total
-  results_df.NEP_poisson[location] = nep_all_poisson_sq**.5
-  results_df.NEP_photon[location]  = nep_photon 
-  results_df.NEP_phonon[location]  = nep_phonon
-  results_df.NEP_johnson[location] = nep_johnson
-  results_df.NEP_readout[location] = nep_readout 
+  results_df.loc[location,('spill_eff')] = spill
+  results_df.loc[location,('illum_eff')]   = illum
+  results_df.loc[location,('FWHM')]        = FWHM
+  results_df.loc[location,('total_pow')]   = p_opt
+  results_df.loc[location,('NEP_total')]   = nep_total
+  results_df.loc[location,('NET_total')]   = net_total
+  results_df.loc[location,('NEP_poisson')] = nep_all_poisson_sq**.5
+  results_df.loc[location,('NEP_photon')]  = nep_photon 
+  results_df.loc[location,('NEP_phonon')]  = nep_phonon
+  results_df.loc[location,('NEP_johnson')] = nep_johnson
+  results_df.loc[location,('NEP_readout')] = nep_readout 
 
-  bolo_char_out_df.Psat[location] = p_sat
-  bolo_char_out_df.Gbar[location] = G_bar
-  bolo_char_out_df.Gdyn[location] = G_dyn
-  bolo_char_out_df.Tc[location] = t_c
-  bolo_char_out_df.Vb[location] = v_bias
+  bolo_char_out_df.loc[location,('Psat')] = p_sat
+  bolo_char_out_df.loc[location,('Gbar')] = G_bar
+  bolo_char_out_df.loc[location,('Gdyn')] = G_dyn
+  bolo_char_out_df.loc[location,('Tc')] = t_c
+  bolo_char_out_df.loc[location,('Vb')] = v_bias
+  bolo_char_out_df.loc[location,('gamma')] = gamma
 
   #pdb.set_trace()
 
@@ -268,7 +276,7 @@ if settings.mult_bands is True:
                       'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon', 
                       'NEP_johnson','NEP_readout'])
 
-  bolo_char_out_df = pandas.DataFrame(index=bands.index, columns=['Band', 'Psat','Gbar','Gdyn', 'Tc', 'Vb'])
+  bolo_char_out_df = pandas.DataFrame(index=bands.index, columns=['Band', 'Psat','Gbar','Gdyn', 'Tc', 'Vb','gamma'])
 
   # copy data over
   results_df.Band = bands.Band
@@ -290,7 +298,7 @@ else:
                       'nu_high','spill_eff','illum_eff','FWHM', 'total_pow','NEP_total',
                       'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon', 
                       'NEP_johnson','NEP_readout'])
-  bolo_char_out_df = pandas.DataFrame(index=bands.index, columns=['Psat','Gbar','Gdyn', 'Tc', 'Vb'])
+  bolo_char_out_df = pandas.DataFrame(index=[1], columns=['Psat','Gbar','Gdyn', 'Tc', 'Vb','gamma'])
 
   element_out_df, results_df, bolo_char_out_df = power_noise_calculation(element_df, element_out_df, 
                                results_df, settings.band, settings.freq)
