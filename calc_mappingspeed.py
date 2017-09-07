@@ -19,6 +19,7 @@ import os, sys
 import matplotlib
 import pandas
 import time
+import datetime
 import numpy as np
 import scipy.integrate as scint
 import matplotlib.pyplot as plt
@@ -55,12 +56,32 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     # data frames (input, elements out, results)
     # band (this may change...)
     # center freq, a string for labeling.  really is band name.
-    
 
-  # calc illum and spillover efficiencies.  From edge taper.
-  spill, illum = lf.get_spill_illum_effs(settings.edge_db,settings.f_number)
   c_lambda = 299792458 / np.mean(band)
-  FWHM = lf.calc_beam(settings.aperture_radius*2., settings.edge_db, c_lambda) # telescope beam in arcmin
+    
+  if settings.MCP:   # use pixel sizes and lambda to get spill and edge_taper. Need to determine how bands relate amongst pixels.
+    if settings.use_edge_dB:
+      # calc spill from dB per pixel
+      spill, illum = lf.get_spill_illum_effs(results_df.loc[location,('edge_dB')],settings.f_number)  
+      theta_px = lf.theta_px_from_edge_db(results_df.loc[location,('edge_dB')],settings.f_number)
+      results_df.loc[location,('D_px')] = lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio)
+
+    elif settings.use_D_px:
+      # calc spill from D_px.
+      theta_px = lf.get_theta_px(c_lambda, results_df.loc[location,('D_px')],settings.diameter_to_waist_ratio)
+      spill, illum = lf.get_spill_illum_effs_from_theta_px(theta_px,settings.f_number)
+      results_df.loc[location,('edge_dB')] =  lf.edge_db_from_theta_px(theta_px,settings.f_number)
+
+    else:
+      print '\n\n No clear idea of what pixel size or edge taper to use!\n\n Check settings file\n\n'
+      sys.exit()
+
+    FWHM = lf.calc_beam(settings.aperture_radius*2., results_df.loc[location,('edge_dB')], c_lambda) # telescope beam in arcmin
+
+  else:      # use edge taper to get spillover.
+    # calc illum and spillover efficiencies.  From edge taper.
+    spill, illum = lf.get_spill_illum_effs(settings.edge_db,settings.f_number)
+    FWHM = lf.calc_beam(settings.aperture_radius*2., settings.edge_db, c_lambda) # telescope beam in arcmin
 
   for i,elem in enumerate(element_df.element):
     element_out_df.element[i] = elem # put values in export data frame
@@ -113,13 +134,6 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
     element_out_df.power_absorb[i] = power_emit*element_out_df.cum_eff[i]
     element_out_df.nep_poisson[i] = np.sqrt(poisson_nepsq)
     element_out_df.nep_bunch[i] = np.sqrt(bunch_nepsq)
-
-  # save elements data frame
-  save_path = os.path.join(settings.base_path,'outputs/%s' %settings.version)
-  
-  
-  if not os.path.exists(save_path):
-    os.mkdir(save_path)
 
   element_out_df.to_csv(os.path.join(save_path, '%s_elements_out.csv' %(c_freq)), index=True)
     
@@ -267,14 +281,25 @@ def power_noise_calculation(element_df, element_out_df,results_df, band, c_freq,
 #pdb.set_trace()
 
 
+# save path for data frames
+main_path = os.path.join(settings.base_path,'outputs/%s' %settings.version)
+
+if not os.path.exists(main_path):
+  os.mkdir(main_path)
+
+now = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+save_path = os.path.join(main_path, '%s' %(now))
+if not os.path.exists(save_path):
+  os.mkdir(save_path)
+
+results_cols=['Band','nu','nu_low','nu_high','D_px','edge_dB','spill_eff','illum_eff','FWHM', 'total_pow','NEP_total',
+         'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson','NEP_readout']
+
 if settings.mult_bands is True:
   # read in bands csv
   bands = pandas.read_csv(settings.bands_path)
   # make output df
-  results_df = pandas.DataFrame(index=bands.index, columns=['Band','nu','nu_low',
-                      'nu_high','spill_eff','illum_eff','FWHM', 'total_pow','NEP_total',
-                      'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon', 
-                      'NEP_johnson','NEP_readout'])
+  results_df = pandas.DataFrame(index=bands.index, columns=results_cols)
 
   bolo_char_out_df = pandas.DataFrame(index=bands.index, columns=['Band', 'Psat','Gbar','Gdyn', 'Tc', 'Vb','gamma'])
 
@@ -286,7 +311,49 @@ if settings.mult_bands is True:
 
   bolo_char_out_df.Band = bands.Band
 
+  # calculate (or load) pixel properties to use
 
+  if settings.use_edge_dB:      # calc edge dB for each band given fixed pixels.
+    
+    pixel_types = []
+    for i in bands.loc[:,('pixel')]:
+      if i not in pixel_types:
+        pixel_types.append(i)
+
+    for pixel in pixel_types:
+      ## get the bands per pixel
+      px_bands = bands.loc[bands.loc[:,('pixel')]==pixel,('Band')]  # bands in this pixel.
+
+      ## based on length do soemthign --- # 3 cases, tri-chroic, bi-chroic, single color.
+      if len(px_bands) == 3:
+        # set middle band to edge_dB
+        results_df.loc[(px_bands.index[1]),('edge_dB')] = settings.edge_db
+        # calc lower and upper bands
+        #lower
+        results_df.loc[(px_bands.index[0]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                            bands.nu[px_bands.index[1]], bands.nu[px_bands.index[0]])
+        #upper
+        results_df.loc[(px_bands.index[2]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                            bands.nu[px_bands.index[1]], bands.nu[px_bands.index[2]])
+
+      elif len(px_bands) == 2:
+        # set lower band to edge_dB
+        results_df.loc[(px_bands.index[0]),('edge_dB')] = settings.edge_db
+        # calc edge_dB of upper band
+        results_df.loc[(px_bands.index[1]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                            bands.nu[px_bands.index[0]], bands.nu[px_bands.index[1]])
+        
+      elif len(px_bands) == 1:
+        results_df.loc[(px_bands.index[0]),('edge_dB')] = settings.edge_db  ## indexed row by band # minus 1. diff or 0--20 or 1--21 in df.index and df.bands.
+      else:
+        print 'Some error with number of bands in pixel %s. \nExiting...' %pixel
+        sys.exit()
+
+  if settings.use_D_px:  # load from bands.csv dataframe
+    results_df.loc[:,('D_px')] = bands.loc[:,('D_px')]
+
+
+  # run the main code
   for i,center_nu in enumerate(bands.nu):
     band = np.array([bands.nu_low[i],bands.nu_high[i]])*1e9
     c_freq = '%g_GHz' %center_nu
@@ -294,25 +361,21 @@ if settings.mult_bands is True:
                                  results_df, band, c_freq,location=i)
 
 else:
-  results_df = pandas.DataFrame(index=[0], columns=['Band','nu','nu_lo',
-                      'nu_high','spill_eff','illum_eff','FWHM', 'total_pow','NEP_total',
-                      'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon', 
-                      'NEP_johnson','NEP_readout'])
-  bolo_char_out_df = pandas.DataFrame(index=[1], columns=['Psat','Gbar','Gdyn', 'Tc', 'Vb','gamma'])
+  results_df = pandas.DataFrame(index=[0], columns=results_cols)
+  bolo_char_out_df = pandas.DataFrame(index=[1], columns=['Band','Psat','Gbar','Gdyn', 'Tc', 'Vb','gamma'])
 
   element_out_df, results_df, bolo_char_out_df = power_noise_calculation(element_df, element_out_df, 
                                results_df, settings.band, settings.freq)
 
-
   bolo_char_out_df.Band = settings.freq
 
 
-results_df.to_csv(os.path.join(settings.base_path, 
-                 'outputs/%s/All_results_out.csv' %(settings.version)), 
-                 index=True)
 
-bolo_char_out_df.to_csv(os.path.join(settings.base_path, 
-                 'outputs/%s/Bolo_char_out.csv' %(settings.version)), 
-                 index=True)
+results_df.to_csv(os.path.join(save_path, 'All_results_out.csv'), index=True)
+
+bolo_char_out_df.to_csv(os.path.join(save_path,'Bolo_char_out.csv'), index=True)
+
+# link to most recent data.
+os.system('ln -sfn %s outputs/%s/current_directory' %(save_path,settings.version))
 
 pdb.set_trace()

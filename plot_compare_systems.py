@@ -50,6 +50,7 @@ def load_bolo_char(directory):
 def plot_col_ratio(df1,df2,col,ax,**kwargs):
   # dataframe, chosen col name, axis handle, kwargs for plot
   ax.plot(df1.nu,df1[col]/df2[col],**kwargs)
+  #print col,df1[col]/df2[col]
   return ax
 
 def plot_col(df,col,ax,scale=1e12,**kwargs):
@@ -64,61 +65,124 @@ data2 = load_NEPs_data(args[1])
 #create a plot, x-axis frequency
 fig,ax = plt.subplots()
 ax.set_xlabel('Frequency, GHz')
-ax.set_ylim([.3,1.])
+#ax.set_ylim([.3,1.])
 
+plot_col_ratio(data1,data2,'NET_total',ax,marker='o',label='NET')
 plot_col_ratio(data1,data2,'total_pow',ax, marker='o',label='optical power')
+#ax.plot(data1.nu,np.sqrt(data1['total_pow']/data2['total_pow']),marker='x',label='sqrt(optical power)')
+
+
 ax.set_ylabel('Open/Crossed')
+#ax.set_ylabel('250 mK / 100 mK')
 
 fig2,ax2 = plt.subplots()
 ax2.set_xlabel('Frequency, GHz')
-ax2.set_ylim([.3,1.])
+#ax2.set_ylim([.3,1.])
 
 for col in ['NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson', 'NEP_readout']:
   plot_col_ratio(data1,data2,col,ax2,marker='.',ls='-',label=col)
 
 ax2.set_ylabel('NEP ratios, Open/Crossed') 
+#ax2.set_ylabel('NEP ratios, 250 mK / 100 mK') 
 ax2.legend(prop={'size':10})
 
 #fig3,ax3 = plt.subplots()
 #ax3.set_xlabel('Frequency, GHz')
 #ax3.set_ylim([.3,1.])
 
-plot_col_ratio(data1,data2,'NET_total',ax,marker='o',label='NET')
 #ax3.set_ylabel('NET ratio')
 
 ax.legend(prop={'size':13})
 
+#pdb.set_trace()
+fig.tight_layout()
+fig2.tight_layout()
 fig.savefig('./outputs/plots/Pow_NET_ratio.png')
 fig2.savefig('./outputs/plots/NEP_ratios.png')
 #fig3.savefig('./outputs/plots/NET_ratios.png')
 
+## plot for each case
 
-fig4,[ax4a,ax4b] = plt.subplots(2,1,sharex=True)
-ax4a.set_title('Open Dragone')
+#fig4,[[ax4a,ax4b],[ax4c,ax4d]] = plt.subplots(2,2,sharex='col',sharey='row',figsize=(9.6,7.2))
+fig4,[ax4a,ax4b] = plt.subplots(1,2,sharex='row',figsize=(9.6,4.8))
+#ax4a.set_title('Open Dragone')
+#ax4a.set_title('Tbath 250 mK')
+#ax4b.set_title('Crossed Dragone')
+#ax4b.set_title('Tbath 100 mK')
+
+ax4a.set_xlabel('Frequency, GHz')
 ax4b.set_xlabel('Frequency, GHz')
 
-plot_col(data1,'total_pow',ax4a, scale=1e12,marker='o',label='optical power')
 ax4a.set_ylabel('P_opt, Pw')
-plot_col(data1,'NET_total',ax4b, scale=1e6,marker='o',label='Total NET')
-ax4b.set_yscale('log')
 ax4b.set_ylabel('NET, uK rt(sec)')
+ax4b.set_yscale('log')
 
+# data 1
+plot_col(data1,'total_pow',ax4a, scale=1e12,marker='.',label='Open Dragone')
+plot_col(data1,'NET_total',ax4b, scale=1e6,marker='.',label='Open Dragone')
 
+# data 2
+plot_col(data2,'total_pow',ax4a, scale=1e12,marker='.',label='Cross Dragone')
+plot_col(data2,'NET_total',ax4b, scale=1e6,marker='.',label='Cross Dragone')
 
-fig5,ax5 = plt.subplots(1)
-ax5.set_title('Open Dragone')
-ax5.set_xlabel('Frequency, GHz')
+ax4a.legend(prop={'size':12})
+ax4b.legend(prop={'size':12})
+
+fig5,[ax5a,ax5b] = plt.subplots(1,2,sharex=True, sharey=True, figsize=(9.6,4.8))
+ax5a.set_title('Open Dragone')
+#ax5a.set_title('T_bath 250 mK')
+ax5b.set_title('Crossed Dragone')
+#ax5b.set_title('T_bath 100 mK')
+
+ax5a.set_xlabel('Frequency, GHz')
+ax5b.set_xlabel('Frequency, GHz')
+ax5a.set_ylabel('NEPs, aW/rt(Hz)')
 
 for col in ['NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson', 'NEP_readout']:
-  plot_col(data1,col,ax5, scale=1e18,marker='o',label=col)
-ax5.set_ylabel('NEPs, Aw/rt(Hz)')
-ax5.legend(prop={'size':10})
+  plot_col(data1,col,ax5a, scale=1e18,marker='.',label=col)
+  plot_col(data2,col,ax5b, scale=1e18,marker='.',label=col)
 
-fig4.savefig('./outputs/plots/Open_Popt_NET.png')
-fig5.savefig('./outputs/plots/Open_NEP.png')
+#ax5a_sub = ax5a.axis([.1,.7,.3,.3], axisbg='y')
+#ax5b_sub = ax5b.axis([.1,.7,.3,.3], axisbg='y')
+#pdb.set_trace()
+#ax5a_sub.set_xlim([15,60])
+#ax5b_sub.set_xlim([15,60])
+#for col in ['NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson', 'NEP_readout']:
+#  plot_col(data1,col,ax5a_sub, scale=1e18,marker='.',label=col)
+#  plot_col(data2,col,ax5b_sub, scale=1e18,marker='.',label=col)
+
+
+ax5a.legend(prop={'size':10})
+ax5b.legend(prop={'size':10})
+
+fig6,ax6 = plt.subplots(1,sharex=True, sharey=True, figsize=(6.4,4.8))
+#ax6a.set_title('Open Dragone')
+#ax6b.set_title('Crossed Dragone')
+
+ax6.set_xlabel('Frequency, GHz')
+ax6.set_ylabel('FWHM, arcmin')
+
+plot_col(data1,'FWHM',ax6, scale=1,marker='o',label='Open')
+plot_col(data2,'FWHM',ax6, scale=1,marker='o',label='Cross')
+
+ax6.legend(prop={'size':12})
+
+fig4.tight_layout()
+fig5.tight_layout()
+fig6.tight_layout()
+fig4.savefig('./outputs/plots/Both_systems_Popt_NET.png')
+fig5.savefig('./outputs/plots/Both_systems_NEP.png')
+
+ax5a.set_xlim([15,100])
+ax5a.set_ylim([0,8])
+fig5.tight_layout()
+fig5.savefig('./outputs/plots/Both_systems_NEP_zoom.png')
+
+fig6.savefig('./outputs/plots/Both_systems_FWHM.png')
 
 plt.show()
 
+pdb.set_trace()
 
 
 

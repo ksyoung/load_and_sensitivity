@@ -31,10 +31,36 @@ settings.f_number = 1.5  #
 
 settings.edge_db = 10   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
 
+settings.mission_length = 4  # years
+settings.sky_area = 41253 # deg (full sky)
+
+# pixel size calculation parameters
+settings.MCP = True   # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
+                      # if this is False then all bands have same edge taper, which is defined above.
+settings.diameter_to_waist_ratio = 2.95  #from Toki's thesis. 
+
+settings.use_edge_dB = True ## this means calculate pixel sizes from edge taper given earlier.
+settings.use_D_px = False ## use D_px from bands.csv import 
+if settings.use_edge_dB and settings.use_D_px:
+  print '\n use_edge_dB and use_D_px can\'t both be True!!\n\n'
+  sys.exit()
+
+
+settings.calc_N_px_by_area_csv = True   # if true uses FP sizes by band from csv.
+settings.calc_N_px_rough = False      # if true, estimates how many detectors would fit per band.
+                               # if False, uses N_px from bands.csv input file
+settings.x_fp_diameter = 0.50  # 
+settings.y_fp_diameter = 0.40  # 
+
+if settings.calc_N_px_by_area_csv and settings.calc_N_px_rough:
+  print '\n calc_N_px_by_area and calc_N_px_rough can\'t both be True!!\n\n'
+  sys.exit()
+
+
 # Bolo parameters
-settings.t_bath = 0.250  # Kelvin
+settings.t_bath = 0.100 # Kelvin
 settings.safety_factor = 2.5  # Unitless, ratio of p_sat to p_opt
-settings.n = 3.0            # thermal power law exponent (EBEX was ~2)
+settings.n = 2.0            # thermal power law exponent (EBEX was ~2)
 settings.bolo_Rn = 1.33  # Ohms.  TES resistance warm.
 settings.bias_point = 0.75  # depth in transition assumed
 settings.bolo_resistance = settings.bolo_Rn*settings.bias_point  # Ohms
@@ -133,6 +159,9 @@ settings.elements_path = os.path.join(settings.base_path,
 
 settings.bands_path = os.path.join(settings.base_path,
                  'inputs/CMBP_bands.csv')  # csv of bands.
+
+settings.FP_areas_path = os.path.join(settings.base_path,
+                 'inputs/FP_areas_%s.csv' %settings.version)  # csv of FP areas.
 
 
 # unneeded stuff below this line.

@@ -97,7 +97,7 @@ def calc_mirror_transmission(emiss150, band, metal='alum'):
 
 
 def calc_beam(D_m,edge_db,wavelength):
-  # approximate Karl found.  Need to track down source.  From radio astro peeps.
+  # approximation Karl found.  Need to track down source.  From radio astro peeps.
   FWHM_rad = (1.02 + 0.0135*edge_db) * wavelength/(D_m)   #in radians 
   FWHM =  FWHM_rad*(180.0/np.pi)*60 #convert to arcminutes
   return FWHM
@@ -128,6 +128,14 @@ def get_spill_illum_effs(edge_db, f_num):
 
   return spill, illum
 
+def get_theta_px(wavelength, D_px,waist_ratio):
+  # relation from Toki's thesis for SAMPs.  Still holds?
+  return waist_ratio*wavelength / (np.pi * D_px)
+
+def get_D_px(wavelength,theta_px,waist_ratio):
+  # inverse of relation from Toki.
+  return waist_ratio*wavelength / (np.pi * theta_px)
+
 def get_spill_illum_effs_from_theta_px(theta_px, f_num): 
   # integrate e-field over mirror and over all space, divide to get spill.
   # compare to flat to get illumination.
@@ -138,17 +146,29 @@ def get_spill_illum_effs_from_theta_px(theta_px, f_num):
   spill = mirror_field_sq / scint.quad(efield_integrand,0,np.pi,args=(sigma_sq))[0]
   illum = 2. * (1. / np.tan(theta_edge*0.5)**2) * scint.quad(efield_integrand_illum_top \
           ,0,theta_edge,args=(sigma_sq))[0]**2 / mirror_field_sq
-  print 'NOT TESTED YET!!'
-  sys.exit()
   return spill, illum
 
-def theta_px_from_edge_db():
-  pass
-  return 'FAIL'
+def theta_px_from_edge_db(edge_db,f_num):
+  theta_edge = np.arctan(1./(2.*f_num))
+  edge_power = 10**(edge_db*-.1)
+  theta_px = theta_edge * np.sqrt(2. / -np.log(edge_power))
+  return theta_px
 
-def edge_db_from_theta_px():
-  pass
-  return 'FAIL'
+def edge_db_from_theta_px(theta_px,f_num):
+  theta_edge = np.arctan(1./(2.*f_num))
+  edge_power = np.exp(-2. * (theta_edge / theta_px)**2.)
+  edge_db = -10 * np.log10(edge_power) # I'm using db below as positive.  just laziness.
+  return edge_db
+
+def scale_db_between_bands(db_in, nu_in, nu_out):
+  # scale db from one band to another assuming constant pixel size
+  # and theta \propto lambda.
+  # assume fixed f_num. ratio is always const since I use f_num to go to and from theta_px
+  f_num  = 1.
+  theta_px1 = theta_px_from_edge_db(db_in,f_num)
+  theta_px2 = theta_px1 * nu_in / nu_out
+  db_out = edge_db_from_theta_px(theta_px2,f_num)
+  return db_out
 
 def poisson_integrand_lambda_sq(nu,T):
   # an extra 2 * h_ * nu over power integrand
@@ -204,7 +224,7 @@ def bolo_properties(p_opt,t_bath,safety_factor,n,bolo_Rn,bias_point):
   elif n == 3.0:
     t_c = 1.705 * t_bath  # For a SiN link
   else:
-    t_c = np.interp(n,[1.,3.],[2.134,1.705])
+    t_c = np.interp(n,[1.,3.],[2.134,1.705]) * t_bath
 
   p_sat = safety_factor * p_opt
   p_elec = p_sat - p_opt
@@ -217,8 +237,8 @@ def bolo_properties(p_opt,t_bath,safety_factor,n,bolo_Rn,bias_point):
   return p_sat, g_bar, G_dyn, t_c, v_bias, gamma
 
 def calc_bolo_noises(G_dyn,t_c, R_bolo_biased, v_bias, gamma, readout_noise_amps):
-  # R_bolo_biased is resistance at bias.  ??? need to check with franky
-  # readout_noise_amps is number from franky of readout in A*sqrt(s). need to check value.
+  # R_bolo_biased is resistance at bias.  
+  # readout_noise_amps is number from franky of readout in A*sqrt(s). need to check value. This now replaced by franky's code in final calculation.  Here for reference.
   # rest are obvious? i hope...
   phonon = np.sqrt(4 * gamma * k_b * t_c ** 2 * G_dyn)
   johnson = np.sqrt(4 * k_b * t_c / R_bolo_biased) * v_bias
@@ -234,7 +254,7 @@ def nep_to_net_Kcmb(nep,cum_eff,band):
   # need band.
   # lambda squared still assumed.
   # integrate dP/dT, const and cum_eff in front of int.
-  print  scint.quad(dPdT_integrand_lambda_sq,band[0],band[1],args=(Tcmb))
+  #
   dPdT, error = scint.quad(dPdT_integrand_lambda_sq,band[0],band[1],args=(Tcmb))
   dPdT = dPdT * (2* h_ ** 2 / k_b) * cum_eff  # the coeffs in front of integral
   return nep/(np.sqrt(2)*dPdT)
