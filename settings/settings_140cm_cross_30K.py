@@ -19,7 +19,7 @@ settings = Class()
 settings.freq = 'All_GHz'
 settings.version = 'cross_30K'
 settings.name = '140cm_cross_30K'
-settings.verbose = True
+settings.verbose = False#True
 
 # Telescope/ Receiver Optical Parameters
 settings.mult_bands = True
@@ -30,12 +30,14 @@ settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary =
 settings.f_number = 2.14  # 
 
 settings.edge_db = 25   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
+settings.dB_scan = True  # to scan or not to scan on dB.
+settings.dB_array = np.linspace(.1,30,20)#[10.,15.,20]  # array to scan over.
 
 settings.mission_length = 4  # years
 settings.sky_area = 41253 # deg (full sky)
 
 # pixel size calculation parameters
-settings.MCP = True   # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
+settings.MCP = False#True   # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
                       # if this is False then all bands have same edge taper, which is defined above.
 settings.diameter_to_waist_ratio = 2.95  #from Toki's thesis. 
 
@@ -46,9 +48,9 @@ if settings.use_edge_dB and settings.use_D_px:
   sys.exit()
 
 
-settings.calc_N_px_by_area_csv = True   # if true uses FP sizes by band from csv.
+settings.calc_N_px_by_area_csv = False   # if true uses FP sizes by band from csv.
 settings.calc_N_px_rough = False      # if true, estimates how many detectors would fit per band.
-                               # if False, uses N_px from bands.csv input file
+                               # if both False, uses N_px from bands.csv input file
 settings.x_fp_diameter = 1.20  # 
 settings.y_fp_diameter = 1.0  # 
 
@@ -56,6 +58,8 @@ if settings.calc_N_px_by_area_csv and settings.calc_N_px_rough:
   print '\n calc_N_px_by_area and calc_N_px_rough can\'t both be True!!\n\n'
   sys.exit()
 
+settings.calc_correlated_noise = True # if true then full focal plane calculations 
+                                     # include correlated bunching photon white noise.
 
 # Bolo parameters
 settings.t_bath = 0.100  # Kelvin

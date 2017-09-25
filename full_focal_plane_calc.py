@@ -43,86 +43,115 @@ results.loc[:,'pol_weight'] = pandas.Series(np.nan, index=results.index)
 
 
 ## def up some sweet sweet functions
-def check_area(fp_area,px_area):
-  # both arrays,same lenght please.
-  pass
-  # see if anything fails
-  # print failures
- 
-  # print extra space.
+def check_areas(px_count,px_areas,area_diffs):
+  # inputs: number px per type, area used per type, availible strehl per type.
+  used_areas = px_count*px_areas # recalc areas.
+  if any(used_areas > area_diffs):
+    print '\t\tPossible warning!!\n Too many pixel in Band(s) %s\n' %', '.join(pixel_types[used_areas > area_diffs])
+  
+  # check if all inside a given strehl contour are ok.
+  sum_used_A = np.flipud(np.cumsum(np.flipud(used_areas)))
+  sum_fp_areas = np.flipud(np.cumsum(np.flipud(area_diffs)))
+
+  if any(sum_used_A > sum_fp_areas):
+    print '\t\tWARNING!!\n Too many pixels inside countour(s) %s\n' %', '.join(pixel_types[sum_used_A > sum_fp_areas])
+    print 'Reduce area(s) by, ', (sum_used_A-sum_fp_areas)[sum_used_A > sum_fp_areas]
+
+  if np.sum(used_areas) < np.sum(area_diffs):
+    print 'Total area is ok.\n\tAvailible:  %.3f\n\t     Used:  %.3f' %(np.sum(area_diffs),np.sum(used_areas))
+  else:
+    print 'Total area FAILS.\n\tAvailible:  %.3f\n\t     Used:  %.3f\n\n' %(np.sum(area_diffs),np.sum(used_areas))
+
   return
 
+def print_status(px_types, px_count, single_px_area, used_areas, band_areas):
+  # display current state of pixels.
+  print 'Current pixel counts and areas:\n'
+  table = [row for row in zip(px_types,px_count,single_px_area,used_areas,band_areas)]
+  print tabulate(table, headers=['pixel type', 'count','area of pixel', 'area used', 'area availible'],tablefmt='orgtbl') 
 
+  return
+
+def add_correlated_noise(results):
+  # adds NET_array and pol_weight for correlated noise values
+  # needs to be called after pixel numbers are calculated
+  # assumes 2 polarizations are uncorrelated.
+  results.loc[:,'corr_NET_array'] = pandas.Series(np.nan, index=results.index)
+  results.loc[:,'corrCMB_NET_array'] = pandas.Series(np.nan, index=results.index)
+  results.loc[:,'corr_pol_weight'] = pandas.Series(np.nan, index=results.index)
+
+  # get px size -- calc N_airy
+  c_lambda = 0.299792458 / results.nu  # wavelengths
+  D_airy = 1.22*c_lambda*settings.f_number * 2  # equation is for radius of airy, x2 for diameter.
+  N_airy = (D_airy / results.D_px)**2. # really should have hex packing here.... I'm ignoring that.
+  N_airy = np.array([1. if i < 1 else i for i in N_airy])
+
+  results.corr_NET_array = np.sqrt(results.NET_array**2. + results.NET_bunch_all**2./results.num_bolo*(N_airy-1))
+  results.corrCMB_NET_array = np.sqrt(results.NET_array**2. + results.NET_bunch_CMB**2./results.num_bolo*(N_airy-1))
+
+  # NET_new**2 = NET_ar**2 + bose**2/N(N_airy-1)  
+  yrs2sec_deg2arcmin = np.sqrt(settings.sky_area * 3600. / ( 31557600.))
+  results.corr_pol_weight = results.corr_NET_array * yrs2sec_deg2arcmin  / np.sqrt(settings.mission_length) * np.sqrt(2.)
+
+  return results
+
+pixel_types = []
+for i in bands.loc[:,('pixel')]:
+  if i not in pixel_types:
+    pixel_types.append(i)
+pixel_types = np.array(pixel_types) ## later code works if it's an np array.
+
+px_count = np.zeros(len(pixel_types))
+px_areas = np.zeros(len(pixel_types))
+for i,pixel in enumerate(pixel_types):
+  px_indices = np.where(bands.pixel==pixel)[0]
+
+  ## just use first entry for D_px, all should be equal. then get area
+  px_areas[i] = np.pi*results.D_px[px_indices[0]]**2. / 4. 
 
 
 if settings.calc_N_px_by_area_csv:
   print 'Estimating number of pixel which fit in focal plane.\n'
 
   FP_areas = pandas.read_csv(os.path.join(settings.FP_areas_path))
-  area_diffs = -np.diff(FP_areas.area) * 0.9069   #extra area for each frequency. include hex pack factor
-  area_diffs = np.append(area_diffs,FP_areas.area[FP_areas.index[-1]]*0.9069)  # add in last row.
+  area_diffs = -np.diff(FP_areas.area) * 0.9069   # area for each frequency. include hex pack factor
+
+  ######## 3 single band pixels hardcoded!!!  ###############
 
   # how to deal with single band pixels?!?!??!?!?!?!?
   # not using most of the area anyway......
   # for G,H,I.  do even thirds at smallest area.
+  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  
+  ##################
+ 
+  counts = area_diffs/px_areas # pixels which fit per region if packing is perfect. 
+  px_count = np.floor(counts)    # (rounded down)
 
-   
-  pixel_types = []
-  for i in bands.loc[:,('pixel')]:
-    if i not in pixel_types:
-      pixel_types.append(i)
-
-  px_count = np.zeros(len(pixel_types))
-  px_areas = np.zeros(len(pixel_types))
-  for i,pixel in enumerate(pixel_types):
-    px_indices = np.where(bands.pixel==pixel)[0]
-
-    ## just use first entry for D_px, all should be equal. then get area
-    px_areas[i] = np.pi*results.D_px[px_indices[0]]**2. / 4. 
-
-  px_areas_2 = np.append(px_areas[0:6],np.mean(px_areas[-3:]))
-  counts = area_diffs/px_areas_2
-  # split last set amongst 3 bands.  
-  px_count = np.floor(np.append(counts[0:-1],[counts[-1]/3.,counts[-1]/3.,counts[-1]/3.]))
-
-  # is there some way to re-arrange pixel counts?????
-  # check if area works (function)
-  # print extra areas (function)
-  # change values and redo (while loop with pdb inside??)
   change = True
+
+  #  some way to re-arrange pixel counts
   while change:
-    print 'Current pixel counts and areas:\n'
-    print tabulate([pixel_types, px_counts,px_areas,area_diffs], 
-                   headers=['pixel type', 'count','area used', 'area availible']) 
+    used_areas = px_count*px_areas
+    print_status(pixel_types, px_count, px_areas, used_areas, area_diffs)
+   
+    print '\nChange the px_count variable to change pixel numbers in a given band.\nThen continue (c) the program.\n'+\
+          'If happy with distribution set variable change=False.\n'
 
-    print 'Change the px_count variable to change pixel numbers in a given band.\nThen continue (c) the program.'
     pdb.set_trace()
-
+    
+    check_areas(px_count,px_areas,area_diffs)
+ 
   # write px_count to full list corresponding to all bands.
   for i,pixel in enumerate(pixel_types):
     px_index = bands.index[bands.pixel==pixel]
     results.num_bolo[px_index] = px_count[i] * 2
 
-  pdb.set_trace()
-
+ 
 elif settings.calc_N_px_rough: ## estimate N_px that may fit.
   print 'Estimating number of pixel which fit in focal plane.\n'
   # usable focal plane area assuming hex pack = 0.9069
   fp_area = np.pi * settings.x_fp_diameter * settings.x_fp_diameter / 4. * 0.9069
-
-  pixel_types = []
-  for i in bands.loc[:,('pixel')]:
-    if i not in pixel_types:
-      pixel_types.append(i)
-
-  px_count = np.zeros(len(pixel_types))
-  px_areas = np.zeros(len(pixel_types))
-  for i,pixel in enumerate(pixel_types):
-    px_indices = np.where(bands.pixel==pixel)[0]
-
-    px_count[i] = np.max(bands.number[px_indices])
-    ## just use first entry for D_px, all should be equal. then get area
-    px_areas[i] = np.pi*results.D_px[px_indices[0]]**2. / 4. 
 
   tot_area = np.sum(px_count*px_areas)
 
@@ -138,15 +167,57 @@ elif settings.calc_N_px_rough: ## estimate N_px that may fit.
  
 else: # just use N_px from bands.csv.
   print 'Using pixel count from %s.' %(settings.bands_path.split('/')[-1])
-  results.num_bolo = bands.number * 2
+
+  px_count = np.zeros(len(pixel_types))
+  px_areas = np.zeros(len(pixel_types))
+  for i,pixel in enumerate(pixel_types):
+    px_indices = np.where(bands.pixel==pixel)[0]
+    ## just use first entry for D_px, all should be equal. then get area
+    px_areas[i] = np.pi*results.D_px[px_indices[0]]**2. / 4. 
+    px_count[i] = bands.number[px_indices[0]]
+
+  ## get availible areas.
+  FP_areas = pandas.read_csv(os.path.join(settings.FP_areas_path))
+  area_diffs = -np.diff(FP_areas.area) * 0.9069   # area for each frequency. include hex pack factor
+
+  ######## 3 single band pixels hardcoded!!!  ###############
+  # for G,H,I.  do even thirds at smallest area.
+  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+    
+  used_areas = px_count*px_areas # calc areas to check fit.
+
+  if any(used_areas > area_diffs):
+    print '\n\t\tPossible warning!!\n Too many pixel in Band(s) %s\n' %', '.join(pixel_types[used_areas > area_diffs])
+    change=True
+  else:
+    change = False
+
+  while change:
+    used_areas = px_count*px_areas
+    print_status(pixel_types, px_count, px_areas, used_areas, area_diffs)
+   
+    check_areas(px_count,px_areas,area_diffs)
+
+    print '\nChange the px_count variable to change pixel numbers in a given band.\nThen continue (c) the program.\n'+\
+          'If happy with distribution set variable change=False.\n'
+
+    pdb.set_trace()
+
+  for i,pixel in enumerate(pixel_types):
+    px_index = bands.index[bands.pixel==pixel]
+    results.num_bolo[px_index] = px_count[i] * 2
+
 
 
 # calculate per band sensitivity, mapping speed, and pol weight
 results.NET_array = results.NET_total / np.sqrt(results.num_bolo)
 results.map_speed = ((results.FWHM / 60.) / results.NET_array)**2.  ## FWHM**2 / NET **2 , deg^2 / (K^2 sec)
-results.weight = results.NET_array * np.sqrt(settings.sky_area * 3600. / (settings.mission_length * 3.154e7)) ## array_NET * sqrt(sky_area / time) K * arcmin ?? may be wrong???
-results.pol_weight = results.weight * np.sqrt(2.) ## ?? may be wrong??
+yrs2sec_deg2arcmin = np.sqrt(settings.sky_area * 3600. / ( 31557600.))
+results.weight = results.NET_array * yrs2sec_deg2arcmin  / np.sqrt(settings.mission_length)  ## array_NET * sqrt(sky_area / time) K * arcmin
+results.pol_weight = results.weight * np.sqrt(2.) ## extra root 2 for polarization data.
 
+if settings.calc_correlated_noise:
+  results = add_correlated_noise(results)
 
 ## resave the thingies.
 results.to_csv(os.path.join(load_path, 'All_results_out.csv'), index=True)

@@ -97,7 +97,7 @@ def calc_mirror_transmission(emiss150, band, metal='alum'):
 
 
 def calc_beam(D_m,edge_db,wavelength):
-  # approximation Karl found.  Need to track down source.  From radio astro peeps.
+  # approximation Karl found.  in Goldsmith's Quasioptical systmes p 139 (Shaul's copy.  From radio astro peeps.
   FWHM_rad = (1.02 + 0.0135*edge_db) * wavelength/(D_m)   #in radians 
   FWHM =  FWHM_rad*(180.0/np.pi)*60 #convert to arcminutes
   return FWHM
@@ -232,7 +232,7 @@ def bolo_properties(p_opt,t_bath,safety_factor,n,bolo_Rn,bias_point):
   G_dyn = g_bar * (n+1) * ((1-t_bath/t_c) / ( 1 - (t_bath/t_c)**(n+1) ))
   v_bias = ((bolo_Rn*bias_point)*p_elec)**(0.5)
 
-  gamma = ((n + 1) / (2*n + 3)) * ((1 - (t_bath / t_c) ** (2*n + 3)) / (1 - (t_bath / t_c) ** (n + 1)))
+  gamma = ((n + 1.) / (2.*n + 3.)) * ((1. - (t_bath / t_c) ** (2.*n + 3.)) / (1. - (t_bath / t_c) ** (n + 1.)))
 
   return p_sat, g_bar, G_dyn, t_c, v_bias, gamma
 

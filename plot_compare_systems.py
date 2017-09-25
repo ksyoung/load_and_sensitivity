@@ -71,7 +71,6 @@ plot_col_ratio(data1,data2,'NET_total',ax,marker='o',label='NET')
 plot_col_ratio(data1,data2,'total_pow',ax, marker='o',label='optical power')
 #ax.plot(data1.nu,np.sqrt(data1['total_pow']/data2['total_pow']),marker='x',label='sqrt(optical power)')
 
-
 ax.set_ylabel('Open/Crossed')
 #ax.set_ylabel('250 mK / 100 mK')
 
@@ -174,11 +173,44 @@ fig4.savefig('./outputs/plots/Both_systems_Popt_NET.png')
 fig5.savefig('./outputs/plots/Both_systems_NEP.png')
 
 ax5a.set_xlim([15,100])
-ax5a.set_ylim([0,8])
+ax5a.set_ylim([0,10])
 fig5.tight_layout()
 fig5.savefig('./outputs/plots/Both_systems_NEP_zoom.png')
 
 fig6.savefig('./outputs/plots/Both_systems_FWHM.png')
+
+
+
+try:
+  fig7,[ax7a,ax7b] = plt.subplots(1,2,sharex='row',figsize=(9.6,4.8))
+
+  ax7a.set_xlabel('Frequency, GHz')
+  ax7b.set_xlabel('Frequency, GHz')
+
+  ax7b.set_ylabel('Polarization weight, uK arcmin')
+  ax7a.set_ylabel('Polarization weight ratio \n Open/Crossed')
+  ax7b.set_yscale('log')
+
+  plot_col_ratio(data1,data2,'pol_weight',ax7a, marker='.',label='Pol weight')
+
+  # data 1
+  plot_col(data1,'pol_weight',ax7b, scale=1e6,marker='.',label='Open Dragone')
+
+  # data 2
+  #plot_col(data2,'total_pow',ax4a, scale=1e12,marker='.',label='Cross Dragone')
+  plot_col(data2,'pol_weight',ax7b, scale=1e6,marker='.',label='Cross Dragone')
+
+  #ax7a.legend(prop={'size':12})
+  ax7b.legend(prop={'size':12})
+
+  fig7.tight_layout()
+  fig7.savefig('./outputs/plots/Both_systems_pol_weight.png')
+
+except:
+  pass
+
+
+
 
 plt.show()
 

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 from pylab import sqrt
 from pywtl.core.wtl_ConvertUtils import convert_squid
 import pywtl.common.analysis.noise.analysis.NoisePred as NP
 import pywtl.common.analysis.noise.analysis.ParameterLib as PL
 import numpy as np
-
 class Class(object):
     def __init__(self, **kwargs):
         for key in kwargs:
@@ -17,21 +17,22 @@ class Class(object):
 settings = Class()
 # Run time paramters
 settings.freq = 'All_GHz'
-settings.version = 'open_midstop'
-settings.name = '1.4m_open_midstop'
-settings.verbose =  False#True
+settings.version = 'cross_vary_stop'
+settings.name = '140cm_cross_vary_stop'
+settings.verbose = False
 
 # Telescope/ Receiver Optical Parameters
 settings.mult_bands = True
-#settings.band = [133.,167.]  # GHz, lower, upper.  150, width = 34
+#settings.band = [133.,167.]  # GHz, lower, upper.
 #settings.band = np.array(settings.band)*1e9  # Hz
 
 settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary = 1.25m radius)
-settings.f_number = 1.5  # 
+settings.f_number = 2.14  # 
 
 settings.edge_db = 10   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
 settings.dB_scan = True  # to scan or not to scan on dB.
 settings.dB_array = np.linspace(.1,30,20)#[10.,15.,20]  # array to scan over.
+
 
 settings.mission_length = 4  # years
 settings.sky_area = 41253 # deg (full sky)
@@ -50,9 +51,9 @@ if settings.use_edge_dB and settings.use_D_px:
 
 settings.calc_N_px_by_area_csv = False   # if true uses FP sizes by band from csv.
 settings.calc_N_px_rough = False      # if true, estimates how many detectors would fit per band.
-                               # if both False, uses N_px from bands.csv input file
-settings.x_fp_diameter = 0.50  # 
-settings.y_fp_diameter = 0.40  # 
+                               # if False, uses N_px from bands.csv input file
+settings.x_fp_diameter = 1.20  # 
+settings.y_fp_diameter = 1.0  # 
 
 if settings.calc_N_px_by_area_csv and settings.calc_N_px_rough:
   print '\n calc_N_px_by_area and calc_N_px_rough can\'t both be True!!\n\n'
@@ -62,13 +63,13 @@ settings.calc_correlated_noise = True # if true then full focal plane calculatio
                                      # include correlated bunching photon white noise.
 
 # Bolo parameters
-settings.t_bath = 0.100 # Kelvin
+settings.t_bath = 0.100  # Kelvin
 settings.safety_factor = 2.5  # Unitless, ratio of p_sat to p_opt
 settings.n = 2.0            # thermal power law exponent (EBEX was ~2)
 settings.bolo_Rn = 1.33  # Ohms.  TES resistance warm.
 settings.bias_point = 0.75  # depth in transition assumed
 settings.bolo_resistance = settings.bolo_Rn*settings.bias_point  # Ohms
-## old readout noise method.
+## old readout noise method
 settings.readout_noise_amps = 7e-12 # Amps*rt(sec), number from Franky for scaling readout noise.
 
 # More bolo parameters for franky's noise code.
@@ -155,7 +156,7 @@ settings.bolo_char = bolo_char
 # Paths
 settings.base_path = '/home/astro/kyoung/Documents/load_and_sensitivity/'
 settings.elements_path = os.path.join(settings.base_path,
-                 'inputs/140cm_open_dragone_midstop.csv')  # all telescope surfaces, lenses, etc.
+                 'inputs/140cm_cross_dragone_vary_stop.csv')  # all telescope surfaces, lenses, etc.
 
 # now being defined in code.
 #settings.elements_out_path = os.path.join(settings.base_path,
