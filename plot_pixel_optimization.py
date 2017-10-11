@@ -23,7 +23,7 @@ import pdb
 matplotlib.rcParams.update({'font.size': 18}) # set good font sizes
 
 # optparse it!
-usage = "usage: %prog  -n name  <input_xlsx> \n plot various params of single .xlsx."
+usage = "usage: %prog  -n name -f fnum <input_xlsx> \n plot various params of single .xlsx."
 parser = optparse.OptionParser(usage)
 parser.add_option('-n', '--name', dest='name', action='store', type='str', default=None)
 parser.add_option('-f', '--fnum', dest='fnum', action='store', type='float', 

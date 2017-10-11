@@ -122,6 +122,7 @@ if settings.calc_N_px_by_area_csv:
   # not using most of the area anyway......
   # for G,H,I.  do even thirds at smallest area.
   area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  #area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/2]*2)  # add in area for last 2 rows.
   
   ##################
  

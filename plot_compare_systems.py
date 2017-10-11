@@ -19,12 +19,15 @@ import optparse
 #from copy import copy, deepcopy
 import pdb
 
-matplotlib.rcParams.update({'font.size': 18}) # set good font sizes
+matplotlib.rcParams.update({'font.size': 16}) # set good font sizes
 
 # optparse it!
 usage = "usage: %prog  <input_csv1> <input_csv2> . . . \n Does csv1 / csv2 in whatever params you want"
 parser = optparse.OptionParser(usage)
-#parser.add_option('-f', '--file', dest='measured_data_path', action='store', type='str')
+parser.add_option('--t1', dest='title1', action='store', type='str', default='Open Dragone', 
+                  help='Title for first set of data.')
+parser.add_option('--t2', dest='title2', action='store', type='str', default='Crossed Dragone',
+                  help='Title for second set of data.')
 #parser.add_option('-i', '--import', dest='import_T', action='store_true', 
 #                  default=False, help='If included program looks for'
 #                  'transmission data at paths, arg1, arg2 ...')
@@ -71,7 +74,7 @@ plot_col_ratio(data1,data2,'NET_total',ax,marker='o',label='NET')
 plot_col_ratio(data1,data2,'total_pow',ax, marker='o',label='optical power')
 #ax.plot(data1.nu,np.sqrt(data1['total_pow']/data2['total_pow']),marker='x',label='sqrt(optical power)')
 
-ax.set_ylabel('Open/Crossed')
+ax.set_ylabel(option.title1+' / '+option.title2)
 #ax.set_ylabel('250 mK / 100 mK')
 
 fig2,ax2 = plt.subplots()
@@ -81,7 +84,7 @@ ax2.set_xlabel('Frequency, GHz')
 for col in ['NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson', 'NEP_readout']:
   plot_col_ratio(data1,data2,col,ax2,marker='.',ls='-',label=col)
 
-ax2.set_ylabel('NEP ratios, Open/Crossed') 
+ax2.set_ylabel('NEP ratios,\n'+ option.title1 + ' / ' + option.title2) 
 #ax2.set_ylabel('NEP ratios, 250 mK / 100 mK') 
 ax2.legend(prop={'size':10})
 
@@ -117,20 +120,20 @@ ax4b.set_ylabel('NET, uK rt(sec)')
 ax4b.set_yscale('log')
 
 # data 1
-plot_col(data1,'total_pow',ax4a, scale=1e12,marker='.',label='Open Dragone')
-plot_col(data1,'NET_total',ax4b, scale=1e6,marker='.',label='Open Dragone')
+plot_col(data1,'total_pow',ax4a, scale=1e12,marker='.',label=option.title1)
+plot_col(data1,'NET_total',ax4b, scale=1e6,marker='.',label=option.title1)
 
 # data 2
-plot_col(data2,'total_pow',ax4a, scale=1e12,marker='.',label='Cross Dragone')
-plot_col(data2,'NET_total',ax4b, scale=1e6,marker='.',label='Cross Dragone')
+plot_col(data2,'total_pow',ax4a, scale=1e12,marker='.',label=option.title2)
+plot_col(data2,'NET_total',ax4b, scale=1e6,marker='.',label=option.title2)
 
 ax4a.legend(prop={'size':12})
 ax4b.legend(prop={'size':12})
 
 fig5,[ax5a,ax5b] = plt.subplots(1,2,sharex=True, sharey=True, figsize=(9.6,4.8))
-ax5a.set_title('Open Dragone')
+ax5a.set_title(option.title1)
 #ax5a.set_title('T_bath 250 mK')
-ax5b.set_title('Crossed Dragone')
+ax5b.set_title(option.title2)
 #ax5b.set_title('T_bath 100 mK')
 
 ax5a.set_xlabel('Frequency, GHz')
@@ -161,8 +164,8 @@ fig6,ax6 = plt.subplots(1,sharex=True, sharey=True, figsize=(6.4,4.8))
 ax6.set_xlabel('Frequency, GHz')
 ax6.set_ylabel('FWHM, arcmin')
 
-plot_col(data1,'FWHM',ax6, scale=1,marker='o',label='Open')
-plot_col(data2,'FWHM',ax6, scale=1,marker='o',label='Cross')
+plot_col(data1,'FWHM',ax6, scale=1,marker='o',label=option.title1)
+plot_col(data2,'FWHM',ax6, scale=1,marker='o',label=option.title2)
 
 ax6.legend(prop={'size':12})
 
@@ -188,17 +191,19 @@ try:
   ax7b.set_xlabel('Frequency, GHz')
 
   ax7b.set_ylabel('Polarization weight, uK arcmin')
-  ax7a.set_ylabel('Polarization weight ratio \n Open/Crossed')
+  ax7a.set_ylabel('Polarization weight ratio \n' + option.title1 + ' / ' + option.title2)
+  #ax7a.set_ylabel('Polarization weight ratio \n Open/Coma corrected')
   ax7b.set_yscale('log')
 
   plot_col_ratio(data1,data2,'pol_weight',ax7a, marker='.',label='Pol weight')
 
   # data 1
-  plot_col(data1,'pol_weight',ax7b, scale=1e6,marker='.',label='Open Dragone')
+  plot_col(data1,'pol_weight',ax7b, scale=1e6,marker='.',label=option.title1)
 
   # data 2
   #plot_col(data2,'total_pow',ax4a, scale=1e12,marker='.',label='Cross Dragone')
-  plot_col(data2,'pol_weight',ax7b, scale=1e6,marker='.',label='Cross Dragone')
+  plot_col(data2,'pol_weight',ax7b, scale=1e6,marker='.',label=option.title2)
+  #plot_col(data2,'pol_weight',ax7b, scale=1e6,marker='.',label='Coma corrected')
 
   #ax7a.legend(prop={'size':12})
   ax7b.legend(prop={'size':12})

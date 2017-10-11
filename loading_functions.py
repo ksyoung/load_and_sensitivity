@@ -176,14 +176,16 @@ def poisson_integrand_lambda_sq(nu,T):
 
 def bunch_integrand_lambda_sq(nu,T):
   # power integrand ** 2.   
-  return (2. * h_ * nu / (np.exp((h_ * nu) / (k_b * T)) - 1))**2.
+  # factor of 2 in front from Roger O'Brient
+  return 2*(2. * h_ * nu / (np.exp((h_ * nu) / (k_b * T)) - 1))**2.
 
 def bunch_integrand_lambda_sq_multiple_surfaces(nu,T_arr,emiss_arr,cum_eff_arr):
   # integrand for all surfaces simultaneously.
   # still assuming lambda_sq
   #  can do as array! handy.  needs np.array inputs.
   # returns (NEP_bunch)**2
-  return (2. * h_ * nu * np.sum(emiss_arr*cum_eff_arr/(np.exp((h_ * nu) / (k_b * T_arr)) - 1)))**2.
+  # factor of 2 in front from Roger O'Brient
+  return 2*(2. * h_ * nu * np.sum(emiss_arr*cum_eff_arr/(np.exp((h_ * nu) / (k_b * T_arr)) - 1)))**2.
 
 
 def NEP_photon_per_element(T,emiss,band,cum_eff, photon_corr=1,through='lambda_sq'):
@@ -219,12 +221,22 @@ def NEP_photon_per_element(T,emiss,band,cum_eff, photon_corr=1,through='lambda_s
 
 
 def bolo_properties(p_opt,t_bath,safety_factor,n,bolo_Rn,bias_point):
+  '''
+  old method of getting t_c, from Toki's thesis. below in Franky's, actually doing the optimization each time.
   if n == 1.0:
     t_c = 2.134 * t_bath  # For a metal (Au) link
   elif n == 3.0:
     t_c = 1.705 * t_bath  # For a SiN link
   else:
     t_c = np.interp(n,[1.,3.],[2.134,1.705]) * t_bath
+  '''
+  ## new t_c method from Franky.  acutally find minimum of function.
+  dx = 0.01
+  x = np.arange(1.+dx, 10., dx)
+  y = (x**(2*n+3) - 1) / (x**(n+1) - 1)**2
+  min_index = np.argmin(y)
+  min_x = x[min_index]
+  t_c = min_x * t_bath
 
   p_sat = safety_factor * p_opt
   p_elec = p_sat - p_opt

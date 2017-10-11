@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 from pylab import sqrt
 from pywtl.core.wtl_ConvertUtils import convert_squid
 import pywtl.common.analysis.noise.analysis.NoisePred as NP
@@ -19,7 +20,7 @@ settings = Class()
 settings.freq = 'All_GHz'
 settings.version = 'open_midstop'
 settings.name = '1.4m_open_midstop'
-settings.verbose =  False#True
+settings.verbose =  True #False #
 
 # Telescope/ Receiver Optical Parameters
 settings.mult_bands = True
@@ -30,14 +31,19 @@ settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary =
 settings.f_number = 1.5  # 
 
 settings.edge_db = 10   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
-settings.dB_scan = True  # to scan or not to scan on dB.
+settings.dB_scan = False # True  # to scan or not to scan on dB.
 settings.dB_array = np.linspace(.1,30,20)#[10.,15.,20]  # array to scan over.
+settings.dB_array = [  0.1000,   0.13501524,   0.18228761,   0.24611127,
+                    0.33228126,   0.44862162,   0.60569578,   0.81776571,
+                    1.10408687,   1.49065655,   2.01257438,   2.7172293 ,
+                    3.66860233,   4.95307593,   6.68727732,   9.02866797,
+                    12.18984071,  16.45782268,  22.22013673,  30.0]
 
 settings.mission_length = 4  # years
 settings.sky_area = 41253 # deg (full sky)
 
 # pixel size calculation parameters
-settings.MCP = False#True   # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
+settings.MCP = True # False # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
                       # if this is False then all bands have same edge taper, which is defined above.
 settings.diameter_to_waist_ratio = 2.95  #from Toki's thesis. 
 
@@ -58,12 +64,13 @@ if settings.calc_N_px_by_area_csv and settings.calc_N_px_rough:
   print '\n calc_N_px_by_area and calc_N_px_rough can\'t both be True!!\n\n'
   sys.exit()
 
-settings.calc_correlated_noise = True # if true then full focal plane calculations 
-                                     # include correlated bunching photon white noise.
+## works, but mirrors not implemented entirely correctly.
+settings.calc_correlated_noise =  True # False # if true then full focal plane calculations 
+                                       # include correlated bunching photon white noise.
 
 # Bolo parameters
-settings.t_bath = 0.100 # Kelvin
-settings.safety_factor = 2.5  # Unitless, ratio of p_sat to p_opt
+settings.t_bath = 0.100  # Kelvin
+settings.safety_factor = 2.  # Unitless, ratio of p_sat to p_opt
 settings.n = 2.0            # thermal power law exponent (EBEX was ~2)
 settings.bolo_Rn = 1.33  # Ohms.  TES resistance warm.
 settings.bias_point = 0.75  # depth in transition assumed
@@ -85,6 +92,57 @@ settings.noise_type = "transition"
 # boost factors for noise.
 settings.johnson_and_readout_factor = None  # use un-modified noise theory.
 
+settings.system = {"T_warm_electronics": 300,  # temperature of the warm electronics for Johnson noise
+          "T_squid_board": 4.2,  # temperature of the SQUID board
+          "R_sq_x28": 20.,  # gain select from 1st stage SQUID ctrl
+          "R_sq_x25": 69800.,  # feedback resistor for 1st stage SQUID ctrl
+          "R_sq_x23": 10.,  # voltage divider after 1st stage SQUID ctrl (10 for EBEX, 20 for ETC[nominal])
+          "R_sq_x24": 121.,  # voltage divider after 1st stage SQUID ctrl
+          "R_sq_x21": 500.,  # feedback resistor for 2nd stage SQUID ctrl
+          "R_sq_x14": 100.,  # gain select #1 from 2nd stage SQUID ctrl
+          "R_sq_x15": 82.5,  # gain select #2 from 2nd stage SQUID ctrl
+          "R_sq_x17": 50.,  # impedance matching to mezz
+          "R_sq_x000": 200.,  # voltage divider for bias resistor
+          "R_sq_x001": 100.,  # voltage divider for nuller
+          "R_sq_x44": 820.,  # current converters for nullers (4 of them)
+          "R_sq_11": 50.,  # current converting resistors for bias
+          "RA_me_13": 50.,  # impedance matching to SQUID ctrl
+          "RA_me_18": 200.,  # feedback resistor for demod 1st stage amplifier
+          "RA_me_Y": 10000.,  # Variable resistor for demod gain (2nd stage)
+          "RA_me_33": 50.,  # 50 ohm resistors in series with cariable resistor for demod gain (2nd stage)
+          "RA_me_32": 10000.,  # feedback resistor for demod 2nd stage amplifier
+          "RA_me_40": 50.,  # series R for votage divider before ADC (one per line)
+          "RA_me_41": 100.,  # middle R for votage divider before ADC
+          "RD_me_10": 50.,  # voltage divider by the carrier/nuller DAC (2 of these)
+          "RD_me_14": 100.,  # voltage divider by the carrier/nuller DAC (1 of these)
+          "RD_me_4": 200.,  # feedback resistor for 1st stage carrier/nuller
+          "RD_me_12": 200.,  # "shorting" resistor for 1st stage carrier
+          "RD_me_2": 50.,  # between 1st and 2nd stage of carrier/nuller (2 of these)
+          "RD_me_CX": 200.,  # gain selecting resistor for 2nd stage carrier ##############################
+          "RD_me_NX": 200.,  # gain selecting resistor for 2nd stage nuller ###############################
+          "RD_me_8": 1000.,  # feedback resistor for 2nd stage carrier/nuller
+          "RD_me_13": 50.,  # impedance matching to SQUID ctrl carrier/nuller
+          "R_bolo_termination": 50.,  # termination resistor in parallel to the bolos
+          "R_fl_bias": 50000.,  # resistor converting the flux bias
+          "R_bias": 0.03,  # bias resistor
+          "R_sq": 100.,  # SQUID impedance
+          "C_ll": 1e-9,  # C of the lead-lag filter
+          "Rw": 10.,  # R from thre wires, contributing to the lead-lag filter
+          "Zt": 500.,  # SQUID transimpedance
+          "G_digital": 2.,  # digital gain
+          "N_channel": 16,  # Mux factor
+          }
+
+
+### changes by Franky to lower readout noise, 9/22/17
+#settings.optimize_gains = False
+settings.optimize_gains = True
+#settings.system["R_sq_x44"] = 820.  # current converters for nullers (4 of them)
+settings.system["R_sq_x44"] = 1640.  # current converters for nullers (4 of them)
+#settings.system["R_bias"] = 0.03  # bias resistor
+settings.system["R_bias"] = 0.015  # bias resistor
+settings.system["Zt"] = 750.  # SQUID transimpedance
+
 # DfMUX general setup
 dfmux_settings['DAN_firmware'] = True
 dfmux_settings['DAN_parser'] = False
@@ -104,7 +162,7 @@ dfmux_settings['Gd'] = 0
 squid_settings['R_FB'] = 5000.
 ##calced in code   # bolo_char['nu'] = 150e9
 ##calced in code   # bolo_char['dnu'] = 34e9
-bolo_char['Zt'] = 320.26
+bolo_char['Zt'] = settings.system["Zt"]
 bolo_char['L_fll'] = PL.LoopGain(bolo_char['Zt'])
 settings.R_wire = 10.  # is warm wire, squid board to squid controller.
 bolo_char['Tbath'] = settings.t_bath

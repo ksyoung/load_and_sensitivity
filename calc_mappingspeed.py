@@ -32,6 +32,8 @@ import pywtl.common.analysis.noise.analysis.NoisePred as NP
 import pywtl.common.analysis.noise.analysis.ParameterLib as PL
 import pywtl.common.analysis.noise.analysis.DataHandlingLib as DataHand
 import FA_noise_functions as FA
+import cosmolab.probe.noise_prediction.noise_prediction as NP_FA
+import cosmolab.probe.noise_library.probe_noise_pred as NP_lib
 
 import pdb
 
@@ -187,17 +189,10 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
   dfmux_settings['An'] = dfmux_settings['Ac']/3. * \
      (R_gain[dfmux_settings['Gn']] + 100.) / (R_gain[dfmux_settings['Gc']] + 100.)
 
-
-  #print dfmux_settings['Ac']
-  #print dfmux_settings['An']
-  #pdb.set_trace()
-
-  
-
   # NEPs, bolometer  (Karl's method.  inaccurate readout)
   nep_phonon,nep_johnson,nep_readout_KY = lf.calc_bolo_noises(G_dyn,t_c, settings.bolo_resistance, 
                                        v_bias, gamma, settings.readout_noise_amps)
-
+  '''
   # NEPs, bolometer in transition (Francois's method, accurate readout)
   if settings.noise_type != 'transition':
     raise ValueError("Only 'transition' is a valid nosie type. Please check settings.")
@@ -220,6 +215,59 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
   noise_summary, noise_list = FA.summarize_noise(settings, noise)
   if settings.verbose:
     print full_text+noise_summary
+  '''
+  #################################3 Franky's new optimized noise below.
+   
+  mux_app = NP_FA.NoisePred() ## load noise class
+  mux_app.settings = settings
+  ## noise library loaded before all the parameters are calculated
+  mux_app.NP = NP_lib.NoisePredLib(settings.system)
+  
+  ## calculating derived parameters
+  
+  if settings.verbose == False: sys.stdout = open(os.devnull, "w")
+  mux_app.calculate_parameters()
+  if settings.verbose == False: sys.stdout = sys.__stdout__
+  #HOW TO load FA coad without loading wrong settings file? it looks in current directory and loads right thing. yay.
+
+  ## noise library loaded after all the parameters are calculated
+  mux_app.NP = NP_lib.NoisePredLib(settings.system)
+
+  ## creates output
+  #self.create_output()
+
+  # # loading parameters
+  # dfmux_settings = self.settings.dfmux_settings
+  # squid_settings = self.settings.squid_settings
+  # bolo_char = self.settings.bolo_char
+
+  valid_noise_type = ["transition"]  # , "darktransition", "overbias", "resistor", "darksquid"]
+  if settings.noise_type not in valid_noise_type:
+    raise ValueError("Noise type '{0:s}' not valid, enter one of these: {1:s}".format(settings.noise_type,
+                                                                                        valid_noise_type))
+  # noise calculation
+  if settings.noise_type == "transition":
+    noise_pred = mux_app.NP.addTransitionNoise(dfmux_settings, squid_settings, bolo_char)
+
+  # parameter and noise text
+  tags = {'title': '', 'squid': '', 'wafer': '', 'dfmux': ''}
+  full_text = mux_app.CreateParameterText(dfmux_settings, squid_settings, bolo_char, noise_pred[0]*1e12,
+                                       noise_pred[1])
+
+  # removes summary part
+  full_text = full_text.split('Predicted noise')[0]
+  full_text = "\n".join([settings.name, full_text])
+
+  # gets noise by type
+  noise = mux_app.extract_noise_from_text(noise_pred[1])
+
+  # custom noise summary
+  noise_summary, noise_list = mux_app.summarize_noise(noise)
+  if settings.verbose:
+    print full_text+noise_summary
+
+      
+  ##############################################
 
   #pdb.set_trace()
   # get out franky noise that I need.  No trailing subscript = trusted code.  KY or FA means
@@ -324,6 +372,7 @@ def calc_MCP_sizes(results_df, bolo_char_out_df, bands):
 
         ## based on length do soemthign --- # 3 cases, tri-chroic, bi-chroic, single color.
         if len(px_bands) == 3:
+          '''
           # set low band to edge_dB
           results_df.loc[(px_bands.index[0]),('edge_dB')] = settings.edge_db
           # calc mid and upper bands
@@ -333,6 +382,17 @@ def calc_MCP_sizes(results_df, bolo_char_out_df, bands):
           #upper
           results_df.loc[(px_bands.index[2]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
                                                               bands.nu[px_bands.index[0]], bands.nu[px_bands.index[2]])
+          '''
+          # set mid band to edge_dB
+          results_df.loc[(px_bands.index[1]),('edge_dB')] = settings.edge_db
+          # calc low and upper bands
+          #lower
+          results_df.loc[(px_bands.index[0]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                              bands.nu[px_bands.index[1]], bands.nu[px_bands.index[0]])
+          #upper
+          results_df.loc[(px_bands.index[2]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                              bands.nu[px_bands.index[1]], bands.nu[px_bands.index[2]])
+
 
         elif len(px_bands) == 2:
           # set lower band to edge_dB
@@ -390,12 +450,12 @@ def add_NET_and_correlated_noise(results):
   # get px size -- calc N_airy
   c_lambda = 0.299792458 / results.nu  # wavelengths
   D_airy = 1.22*c_lambda*settings.f_number * 2  # equation is for radius of airy, x2 for diameter.
-  N_airy = (D_airy / results.D_px)**2.   # really should have hex packing here.... I'm ignoring that.
-  N_airy = np.array([1. if i < 1 else i for i in N_airy])
+  N_airy = (D_airy / results.D_px)**2. * 0.9069 # both are circles. 0.9 is for hex packing.
+  N_airy = np.array([1. if i < 1 else i for i in N_airy]) # allowing fractional pixels, but not values < 1
 
   # num pixels
-  area = (50*settings.f_number*c_lambda)**2.
-  N_px = area*.9069 / results.D_px**2. # really just ratio of diameters squared. pi's cancell, hex packing is factor of .9069.
+  area = (50*settings.f_number*c_lambda)**2.  # do 50 F lambda diameter
+  N_px = area*0.9069 / results.D_px**2. # really just ratio of diameters squared. pi's cancell, hex packing is factor of .9069.
 
   results.NET_array = results.NET_total / N_px**.5
   results.corr_NET_array = (results.NET_array**2. + results.NET_bunch_all**2./(N_px*2.)*(N_airy-1))**.5
