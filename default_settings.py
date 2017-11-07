@@ -7,12 +7,14 @@
 #from settings.settings_140cm_cross_vary_stop import settings
 #from settings.settings_140cm_cross_Qi_4K import settings
 #from settings.settings_140cm_cross_f45_4K import settings
-from settings.settings_140cm_open_midstop import settings
+#from settings.settings_140cm_open_midstop import settings
+from settings.settings_140cm_open_midstop_V3D import settings
 #from settings.settings_140cm_coma_no_low_open_midstop import settings
 #from settings.settings_140cm_coma_open_midstop import settings
 #from settings.settings_140cm_open_PR_stop import settings
 #from settings.settings_50cm_open_4K import settings
 #from settings.settings_50cm_cross_4K import settings
+#from settings.settings_120cm_cross_f25_Qi import settings
 
 
 settings = settings

@@ -34,6 +34,7 @@ import pywtl.common.analysis.noise.analysis.DataHandlingLib as DataHand
 import FA_noise_functions as FA
 import cosmolab.probe.noise_prediction.noise_prediction as NP_FA
 import cosmolab.probe.noise_library.probe_noise_pred as NP_lib
+from joblib import Parallel, delayed
 
 import pdb
 
@@ -288,8 +289,8 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
   nep_total = np.sum(np.array([nep_photon,nep_phonon,nep_johnson,nep_readout])**2.)**0.5
 
   # convert NEP to NET
-  net_total = lf.nep_to_net_Kcmb(nep_total,element_out_df.cum_eff[len(element_df)-1],band)  # K_cmb / rt(Hz)
-
+  net_total = lf.nep_to_net_Kcmb(nep_total,element_out_df.cum_eff[len(element_df)-1],band)  # K_cmb * rt(sec)
+  net_rj_total = lf.nep_to_net_Krj(nep_total,element_out_df.cum_eff[len(element_df)-1],band)  # K_rj * rt(sec)
 
   # write out NEPs
   if settings.verbose:
@@ -317,6 +318,7 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
   results_df.loc[location,('total_pow')]   = p_opt
   results_df.loc[location,('NEP_total')]   = nep_total
   results_df.loc[location,('NET_total')]   = net_total
+  results_df.loc[location,('NET_rj_total')]   = net_rj_total
   results_df.loc[location,('NEP_poisson')] = nep_all_poisson_sq**.5
   results_df.loc[location,('NEP_photon')]  = nep_photon
   results_df.loc[location,('NET_bunch_all')]  = lf.nep_to_net_Kcmb(nep_all_bunch_sq**.5,element_out_df.cum_eff[len(element_df)-1],band) 
@@ -341,7 +343,7 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
 
 def make_data_frames(index=[0]):
   results_cols=['Band','nu','nu_low','nu_high','D_px','edge_dB','spill_eff','illum_eff','FWHM', 'total_pow','NEP_total',
-                'NET_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson','NEP_readout',
+                'NET_total','NET_rj_total', 'NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson','NEP_readout',
                 'NET_bunch_all','NET_bunch_CMB']
 
   results_df = pandas.DataFrame(index=index, columns=results_cols)
@@ -392,7 +394,7 @@ def calc_MCP_sizes(results_df, bolo_char_out_df, bands):
           #upper
           results_df.loc[(px_bands.index[2]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
                                                               bands.nu[px_bands.index[1]], bands.nu[px_bands.index[2]])
-
+          
 
         elif len(px_bands) == 2:
           # set lower band to edge_dB
@@ -441,7 +443,9 @@ def add_NET_and_correlated_noise(results):
   # adds NET_array and pol_weight for correlated noise values
   # assumes a fixed area of diameter = 50*F*lambda.  Only run when optimizing pixel size.
   # assumes 2 polarizations are uncorrelated.
+  results.loc[:,'num_bolos'] = pandas.Series(np.nan, index=results.index)
   results.loc[:,'NET_array'] = pandas.Series(np.nan, index=results.index)
+  results.loc[:,'NET_rj_array'] = pandas.Series(np.nan, index=results.index)
   results.loc[:,'pol_weight'] = pandas.Series(np.nan, index=results.index)
   results.loc[:,'corr_NET_array'] = pandas.Series(np.nan, index=results.index)
   results.loc[:,'corrCMB_NET_array'] = pandas.Series(np.nan, index=results.index)
@@ -454,10 +458,13 @@ def add_NET_and_correlated_noise(results):
   N_airy = np.array([1. if i < 1 else i for i in N_airy]) # allowing fractional pixels, but not values < 1
 
   # num pixels
-  area = (50*settings.f_number*c_lambda)**2.  # do 50 F lambda diameter
+  #area = (50*settings.f_number*c_lambda)**2.  # do 50 F lambda diameter
+  area = (0.20)**2.  # do 20cm diameter
   N_px = area*0.9069 / results.D_px**2. # really just ratio of diameters squared. pi's cancell, hex packing is factor of .9069.
+  results.num_bolos = N_px
 
   results.NET_array = results.NET_total / N_px**.5
+  results.NET_rj_array = results.NET_rj_total / N_px**.5
   results.corr_NET_array = (results.NET_array**2. + results.NET_bunch_all**2./(N_px*2.)*(N_airy-1))**.5
   results.corrCMB_NET_array = (results.NET_array**2. + results.NET_bunch_CMB**2./(N_px*2.)*(N_airy-1))**.5
 
@@ -485,6 +492,22 @@ if settings.dB_scan:
   results_dict = {}
   bolo_dict = {}
 
+  ## add joblib here.
+  def loop_func(taper):
+    settings.edge_db = taper
+    # run all.  
+    #print 'Running edge taper: ', taper
+    results_df, bolo_char_out_df = run_bands_case(element_df, element_out_df, save_path) 
+    results_df = add_NET_and_correlated_noise(results_df)
+    return results_df, bolo_char_out_df
+
+  results = Parallel(verbose=10, n_jobs=5)(delayed(loop_func)(taper) for taper in settings.dB_array)
+
+  for i,taper in enumerate(settings.dB_array):  
+    results_dict[taper] = results[i][0]
+    bolo_dict[taper] = results[i][1]
+
+  '''
   for taper in settings.dB_array:  
     settings.edge_db = taper
     # run all.  
@@ -495,6 +518,7 @@ if settings.dB_scan:
     # save as 1 frame of dict.
     results_dict[taper] = results_df
     bolo_dict[taper] = bolo_char_out_df
+  '''
   
   ## save final stuff
   writer1 = pandas.ExcelWriter(os.path.join(save_path, 'All_results_out.xlsx'))

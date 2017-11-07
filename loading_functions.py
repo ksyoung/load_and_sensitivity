@@ -270,3 +270,8 @@ def nep_to_net_Kcmb(nep,cum_eff,band):
   dPdT, error = scint.quad(dPdT_integrand_lambda_sq,band[0],band[1],args=(Tcmb))
   dPdT = dPdT * (2* h_ ** 2 / k_b) * cum_eff  # the coeffs in front of integral
   return nep/(np.sqrt(2)*dPdT)
+
+def nep_to_net_Krj(nep,cum_eff,band):
+  # convert nep to K_rj, NET. 
+  # assuming lambda squared.
+  return nep/(np.sqrt(2)*cum_eff*2*k_b*(band[1]-band[0]))

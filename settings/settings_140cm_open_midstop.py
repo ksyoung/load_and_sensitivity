@@ -20,7 +20,7 @@ settings = Class()
 settings.freq = 'All_GHz'
 settings.version = 'open_midstop'
 settings.name = '1.4m_open_midstop'
-settings.verbose =  True #False #
+settings.verbose =  True #
 
 # Telescope/ Receiver Optical Parameters
 settings.mult_bands = True
@@ -31,7 +31,7 @@ settings.aperture_radius = 0.7  # aperture radius in meters (2.5 meter primary =
 settings.f_number = 1.5  # 
 
 settings.edge_db = 10   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
-settings.dB_scan = False # True  # to scan or not to scan on dB.
+settings.dB_scan =  False # True # to scan or not to scan on dB.
 settings.dB_array = np.linspace(.1,30,20)#[10.,15.,20]  # array to scan over.
 settings.dB_array = [  0.1000,   0.13501524,   0.18228761,   0.24611127,
                     0.33228126,   0.44862162,   0.60569578,   0.81776571,
@@ -43,7 +43,7 @@ settings.mission_length = 4  # years
 settings.sky_area = 41253 # deg (full sky)
 
 # pixel size calculation parameters
-settings.MCP = True # False # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
+settings.MCP =  False #True # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
                       # if this is False then all bands have same edge taper, which is defined above.
 settings.diameter_to_waist_ratio = 2.95  #from Toki's thesis. 
 

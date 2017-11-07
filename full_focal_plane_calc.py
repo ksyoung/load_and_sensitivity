@@ -24,12 +24,25 @@ from default_settings import *
 
 matplotlib.rcParams.update({'font.size': 18}) # set good font sizes
 
+# optparse it!
+usage = "usage: %prog  -f <folder_to_read_data_from>"
+parser = optparse.OptionParser(usage)
+parser.add_option('-f', dest='folder', action='store', type='str', default=None, 
+                  help='folder which all results_df is loaded from.  Finds All_results_out.csv in this folder.')
+(option, args) = parser.parse_args()
 
 # load bands (has px numbers)
 bands = pandas.read_csv(settings.bands_path)
 # path to newest data.  May need to change this.......
-print 'Loading newest data for %s\n' %settings.version
-load_path = os.path.join(settings.base_path,'outputs/%s/current_directory' %settings.version)
+
+if option.folder is None:
+  print 'Loading newest data for %s\n' %settings.version
+  load_path = os.path.join(settings.base_path,'outputs/%s/current_directory' %settings.version)
+else:
+  print 'Loading data for %s from %s\n' %(settings.version, option.folder)
+  load_path = os.path.join(settings.base_path,'%s' %(option.folder))
+  
+
 # load bolo char (shouldn't need it)
 bolo_char = pandas.read_csv(os.path.join(load_path,'Bolo_char_out.csv'),index_col=0)
 # load all results.
@@ -183,15 +196,16 @@ else: # just use N_px from bands.csv.
 
   ######## 3 single band pixels hardcoded!!!  ###############
   # for G,H,I.  do even thirds at smallest area.
-  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  #area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*2)  # add in area for last 3 rows.
     
   used_areas = px_count*px_areas # calc areas to check fit.
 
   if any(used_areas > area_diffs):
     print '\n\t\tPossible warning!!\n Too many pixel in Band(s) %s\n' %', '.join(pixel_types[used_areas > area_diffs])
-    change=True
-  else:
-    change = False
+  change=True
+  #else:  Just always force user input.
+  #  change = False
 
   while change:
     used_areas = px_count*px_areas
