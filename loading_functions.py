@@ -15,7 +15,7 @@ Called by calc_mapping_speed.py
 
 import os, sys
 import matplotlib
-#import pdb
+import pdb
 import pandas
 import time
 import numpy as np
@@ -258,6 +258,95 @@ def calc_bolo_noises(G_dyn,t_c, R_bolo_biased, v_bias, gamma, readout_noise_amps
 
   return phonon,johnson,readout
 
+def TDM_time_const(Ldc, C0, G_dyn, Tc, T0, R_op, Rs_Rop, L_sq_nyq, bI=0.,g=1.):
+  # from Roger Obrient's code.  calc all applicable taus for TDM.
+  # inputs:
+  # Ldc - DC loop gain.
+  # C0 - heat capacity, J/K
+  # G_dyn - dynamic thermal conductance
+  # g  - ??????????????????????????  Is 1 in RO's code though.
+  # Tc - transition temp.  Kelvin
+  # T0 - bath temp   K
+  # R_op, bolo R at operation     Ohm
+  # Rs_op, shut resistor R at operation   Ohm
+  # L_sq_nyq - Squid nyquist inductor, 2 uH in Roger's inputs.
+  # bI - describes change in TES resistance vs current, normally 0.  (from Roger's presentation.)
+  # output dictionary of taus.
+  tau = {}
+  
+  # untested.
+  # all taus in seconds.
+  tau['o'] = (C0*(Tc/T0)**g)/G_dyn; #s, time const, no feedback
+  tau['e'] = L_sq_nyq/(Rs_Rop*R_op+R_op*(1+bI))
+  tau['LG'] = C0*(Tc/T0)**g/(G_dyn*(1-Ldc))
+  tau['minus'] = 1./((0.5/tau['e'])+(0.5/tau['LG'])-0.5*np.sqrt((((1./tau['e'])-(1./tau['LG']))**2)-4*R_op*Ldc*(2+bI)/(L_sq_nyq*tau['o'])))
+  tau['plus'] = 1./((0.5/tau['e'])+(0.5/tau['LG'])+0.5*np.sqrt((((1./tau['e'])-(1./tau['LG']))**2)-4*R_op*Ldc*(2+bI)/(L_sq_nyq*tau['o'])))
+  tau['mux_stab_fac'] = ((1./tau['e']-1./tau['LG'])**2)/(4*R_op*Ldc*(2+bI)/(Ldc*tau['o']))
+
+  return tau
+
+def TDM_readout_noise(NEP_photon, NEP_phonon, P_inc, Tc, T0, G_dyn, alpha, n, R_op, Rs_Rop, safety_factor, C0, L_sq_nyq,bI=0.):
+  # taken from Roger Obrient's code. should be verbatim except for name changes to match my conventions.
+  # inputs are:
+  # NEP_photon
+  # NEP_phonon
+  # P_inc - load power   Watts
+  # Tc - transition temp.  Kelvin
+  # T0 - bath temp   K
+  # G_dyn - same def. as earlier.   W/K
+  # alpha - slope of transition, typically ~100
+  # n, standar thermal exponent.  usually 2-3.
+  # R_op, bolo R at operation     Ohm
+  # Rs_op, shut resistor R at operation   Ohm
+  # safety_factor - ratio of Psat to Pload
+  # C0
+  # R_dyn_SQ - ????????????????
+  # Lstray - ????????????
+  # In_SQ - ?????????????????
+  # bI - describes change in TES resistance vs current, normally 0.  (from Roger's presentation.)
+  
+  # outputs johnson, shunt, alias noise.  Everything else (photon, phonon) is same for TDM/FDM.
+
+  # untested
+  P_bias = P_inc*(safety_factor-1.); # headroom, equivalently assumed bias power.   Watt
+  I0=np.sqrt(P_bias/R_op); #Current through bolo @ operation   Amps
+  Ldc=alpha*P_bias/(G_dyn*Tc); #Loop gain, DC bias
+  # pdb.set_trace()
+  # uncorrected
+  johnson = 5.*np.sqrt(4.*k_b*Tc*R_op)*I0/Ldc;  #W/rtHz   ????????????????? why a five???
+  shunt = I0*((Ldc-1)/Ldc)*np.sqrt(4*k_b*T0*Rs_Rop*R_op);  #W/rtHz   ??????? where is (1 + 2pi f tau) term?
+
+  #get taus
+  tau = TDM_time_const(Ldc, C0, G_dyn, Tc, T0, R_op, Rs_Rop, L_sq_nyq, bI=0.)
+
+  S_DC=-(1./(I0*R_op*(2+bI)))*(1-(tau['plus']/tau['LG']))*(1-tau['minus']/tau['LG']); #uA/W, sensitivity
+  ##
+  R_dyn_SQ =1.
+  Lstray = 1.
+  Nmux = 128
+  In_SQ =1.
+  NEP_no_alias = 1.
+  ###
+  f_nyq=1e3*(R_dyn_SQ/(2.*np.pi*Lstray*2*Nmux)); #kHz
+  det_alias_sum=0;
+  for ii in range(1,11):  # vector of 1 to 10.
+    XX=(NEP_phonon**2 + NEP_photon**2 + 
+        johnson**2.*(1 + (4*np.pi*ii*(1e-3*f_nyq)*tau['o'])**2) + 
+        shunt**2.*(1 + (4*np.pi*ii*(1e-3*f_nyq)*tau['e'])**2)) / (
+        (1+(4*np.pi*ii*(1e-3*f_nyq)*tau['minus'])**2)*(1+(4*np.pi*ii*(1e-3*f_nyq)*tau['plus'])**2))
+    det_alias_sum = det_alias_sum + XX;
+
+  NEP_det_alias=np.sqrt(2*det_alias_sum);
+  NEP_sq_alias=1e-18*In_SQ*np.sqrt(1+2*Nmux**2*np.sum(1./(np.arange(1,1001))**2.+Nmux**2))/np.abs(S_DC);
+  NEP_sq_no_alias=1e-18*In_SQ/np.abs(S_DC);
+
+  NEP_read_tot=np.sqrt(NEP_no_alias**2+NEP_det_alias**2+NEP_sq_alias**2);
+  #NEP_MUX_penalty=NEP_tot/NEP_no_alias;
+
+  alias = 1.#NEP_read_tot #placeholder.
+  #pdb.set_trace()
+  return johnson, shunt, alias
+
 def dPdT_integrand_lambda_sq(nu,T):
   return ( (1 / (np.e ** ((h_ * nu) / (k_b * T)) - 1))**2. * (nu / T)**2. *np.e**((h_ * nu) / (k_b * T)) )
 
@@ -269,6 +358,7 @@ def nep_to_net_Kcmb(nep,cum_eff,band):
   #
   dPdT, error = scint.quad(dPdT_integrand_lambda_sq,band[0],band[1],args=(Tcmb))
   dPdT = dPdT * (2* h_ ** 2 / k_b) * cum_eff  # the coeffs in front of integral
+
   return nep/(np.sqrt(2)*dPdT)
 
 def nep_to_net_Krj(nep,cum_eff,band):

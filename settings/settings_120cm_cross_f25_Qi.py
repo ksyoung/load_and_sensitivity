@@ -17,7 +17,7 @@ class Class(object):
 settings = Class()
 # Run time paramters
 settings.freq = 'All_GHz'
-settings.version = 'cross_f25_Qi'
+settings.version = '120cm_cross_Qi_f25'
 settings.name = '120cm_cross_f25_Qi'
 settings.verbose = True #False
 
@@ -29,7 +29,7 @@ settings.mult_bands = True
 settings.aperture_radius = 0.6  # aperture radius in meters (2.5 meter primary = 1.25m radius)
 settings.f_number = 2.5  # 
 
-settings.edge_db = 18   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
+settings.edge_db = 10   # edge taper on primary mirror in dB.  May later be calculated from pixel sizes.
 settings.dB_scan = False#True  # to scan or not to scan on dB.
 settings.dB_array = np.linspace(.1,30,20)#[10.,15.,20]  # array to scan over.
 settings.dB_array = [  0.1000,   0.13501524,   0.18228761,   0.24611127,
@@ -63,7 +63,7 @@ if settings.calc_N_px_by_area_csv and settings.calc_N_px_rough:
   print '\n calc_N_px_by_area and calc_N_px_rough can\'t both be True!!\n\n'
   sys.exit()
 
-settings.calc_correlated_noise = False#True # if true then full focal plane calculations 
+settings.calc_correlated_noise = True # False# if true then full focal plane calculations 
                                      # include correlated bunching photon white noise.
 
 # Bolo parameters
@@ -213,7 +213,7 @@ settings.bolo_char = bolo_char
 # Paths
 settings.base_path = '/home/astro/kyoung/Documents/load_and_sensitivity/'
 settings.elements_path = os.path.join(settings.base_path,
-                 'inputs/140cm_cross_dragone_30K.csv')  # all telescope surfaces, lenses, etc.
+                 'inputs/140cm_cross_dragone_4K.csv')  # all telescope surfaces, lenses, etc.
 
 # now being defined in code.
 #settings.elements_out_path = os.path.join(settings.base_path,

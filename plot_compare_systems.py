@@ -140,7 +140,7 @@ ax5a.set_xlabel('Frequency, GHz')
 ax5b.set_xlabel('Frequency, GHz')
 ax5a.set_ylabel('NEPs, aW/rt(Hz)')
 
-for col in ['NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson', 'NEP_readout']:
+for col in ['NEP_poisson', 'NEP_photon', 'NEP_phonon','NEP_johnson', 'NEP_readout']: #
   plot_col(data1,col,ax5a, scale=1e18,marker='.',label=col)
   plot_col(data2,col,ax5b, scale=1e18,marker='.',label=col)
 
@@ -217,10 +217,42 @@ except:
 
 
 
-plt.show()
-
 pdb.set_trace()
 
+plt.show()
+
+SMALL_SIZE = 26
+MEDIUM_SIZE = 32
+BIGGER_SIZE = 44
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+plt.rc('axes',linewidth=2)
+
+#fig4,[[ax4a,ax4b],[ax4c,ax4d]] = plt.subplots(2,2,sharex='col',sharey='row',figsize=(9.6,7.2))
+fig4,ax4b = plt.subplots(figsize=(16,8))
+#ax4a.set_title('Open Dragone')
+#ax4a.set_title('Tbath 250 mK')
+#ax4b.set_title('Crossed Dragone')
+#ax4b.set_title('Tbath 100 mK')
+
+ax4b.set_xlabel('Frequency, GHz')
+
+ax4b.set_ylabel(r'NET, $\mu K_{CMB}$ arcmin')
+ax4b.set_yscale('log')
+
+# data 1
+plot_col(data1,'corr_pol_weight',ax4b, scale=1e6,marker='o',lw=3,markersize=10,label=option.title1)
+
+fig4.tight_layout()
+fig4.savefig('./outputs/plots/pol_weight_log_big.png', dpi=600)
+plt.show()
 
 
 

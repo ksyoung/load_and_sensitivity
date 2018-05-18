@@ -19,7 +19,7 @@ import optparse
 #from copy import copy, deepcopy
 import pdb
 
-matplotlib.rcParams.update({'font.size': 18}) # set good font sizes
+matplotlib.rcParams.update({'font.size': 16}) # set good font sizes
 
 # optparse it!
 usage = "usage: %prog  <input_csv1> <input_csv2> . . . \n plots various params of all csvs."
@@ -65,42 +65,51 @@ data={}
 for i,path in enumerate(dirs):
   data[names[i]]=load_NEPs_data(path)
 
-names.sort(key=lambda i: int(i.split('K')[0])) # have to sort after loading data.
+#names.sort(key=lambda i: int(i.split('K')[0])) # have to sort after loading data.
 
 pdb.set_trace()
 
 ## plot power
 fig1,ax1 = plt.subplots(1)
 ax1.set_xlabel('Frequency, GHz')
-ax1.set_ylabel('Optical power, pW')
+ax1.set_ylabel('Absorbed Optical Power, pW')
 
 for name in names:
-  plot_col(data[name], 'total_pow',ax1,scale=1e12,marker='.',label=name)
+  plot_col(data[name], 'total_pow',ax1,scale=1e12,marker='o',label=name)
 
-ax1.legend(prop={'size':10})
+#ax1.legend(prop={'size':10})
 fig1.tight_layout()
 fig1.savefig('./outputs/plots/multi_system_Popt.png')
 
 ## plot NET
 fig2,ax2 = plt.subplots(1)
 ax2.set_xlabel('Frequency, GHz')
-ax2.set_ylabel('NET, uK*rt(s)')
+ax2.set_ylabel(r'Detector NET, $\mu$K$\sqrt{\mathrm{s}}$')
 ax2.set_yscale('log')
 
 for i in names:
-  plot_col(data[i], 'NET_total',ax2,scale=1e6,marker='.',label=i)
+  plot_col(data[i], 'NET_total',ax2,scale=1e6,marker='o',label=i)
+  
+# plot some range in a zoomed plot.
 
-ax2.legend(prop={'size':10})
+#ax2.legend(prop={'size':10})
 fig2.tight_layout()
 fig2.savefig('./outputs/plots/multi_system_NET.png')
 
 ## plot NEP
 fig3,ax3 = plt.subplots(1)
 ax3.set_xlabel('Frequency, GHz')
-ax3.set_ylabel('total NEP, aW/rt(Hz)')
+ax3.set_ylabel(r'Detector NEP, aW/$\sqrt{\mathrm{Hz}}$')
 
 for i in names:
-  plot_col(data[i], 'NEP_total',ax3,scale=1e18,marker='.',label=i)
+  #plot_col(data[i], 'NEP_total',ax3,scale=1e18,marker='.',label=i)
+  plot_col(data[i], 'NEP_total',ax3,scale=1e18,marker='o',label='Total')
+  plot_col(data[i], 'NEP_photon',ax3,scale=1e18,marker='o',label='Photon')
+  plot_col(data[i], 'NEP_phonon',ax3,scale=1e18,marker='o',label='Phonon')
+  #plot_col(data[i], 'NEP_readout2',ax3,scale=1e18,marker='o',label='Readout')  
+  plot_col(data[i], 'NEP_TES',ax3,scale=1e18,marker='o',label='TES Johnson')  
+  plot_col(data[i], 'NEP_readout3',ax3,scale=1e18,marker='o',label='Readout')  
+
 
 ax3.legend(prop={'size':10})
 fig3.tight_layout()

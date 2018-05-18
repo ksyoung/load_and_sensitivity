@@ -18,7 +18,7 @@ class Class(object):
 settings = Class()
 # Run time paramters
 settings.freq = 'All_GHz'
-settings.version = 'open_midstop_V3D'
+settings.version = 'open_midstop_V3D_April2018_TDMtest'
 settings.name = '1.4m_open_midstop'
 settings.verbose =  True # False #
 
@@ -43,8 +43,12 @@ settings.dB_array = [  0.1000,   0.13501524,   0.18228761,   0.24611127,
                     3.66860233,   4.95307593,   6.68727732,   9.02866797,
                     12.18984071,  16.45782268,  22.22013673,  30.0, 35.,45.]
 
-settings.mission_length = 4  # years
+settings.mission_length = 5 * 0.95  # 5 years at 95% effeciency
 settings.sky_area = 41253 # deg (full sky)
+
+# scale emissivity with frequency or not
+settings.emiss_rt_GHz =  True  #  False  #
+
 
 # pixel size calculation parameters
 settings.MCP =  True # False # assumes MCPs and finds pixel diameters, edge tapers, counts, etc.
@@ -81,6 +85,14 @@ settings.bias_point = 0.75  # depth in transition assumed
 settings.bolo_resistance = settings.bolo_Rn*settings.bias_point  # Ohms
 ## old readout noise method.
 settings.readout_noise_amps = 7e-12 # Amps*rt(sec), number from Franky for scaling readout noise.
+
+# settings added for TDM noise calc
+settings.readout_type = 'FDM' # 'TDM'  # readout to use for main calculation. All values are recorded, but this readout goes into the final noise number.
+settings.alpha = 100  # slope of R v T curve d(logR)/dT.  100 typical number from Roger O'Brient
+settings.C0 = 1e-12  # Heat capacity, pJ/K
+settings.R_op_TDM = 0.03  # TES resistance at operating point. ohms
+settings.Rs_op_TDM = 0.1  # shunt resistor at oparation point. ohms
+settings.L_sq_nyq = 2.e-6 # nyquist inductor.  Henrys
 
 # More bolo parameters for franky's noise code.
 settings.conv = convert_squid('Normalized_16ch')
@@ -166,7 +178,7 @@ dfmux_settings['Gd'] = 0
 squid_settings['R_FB'] = 5000.
 ##calced in code   # bolo_char['nu'] = 150e9
 ##calced in code   # bolo_char['dnu'] = 34e9
-bolo_char['Zt'] = settings.system["Zt"]
+bolo_char['Zt'] = settings.system['Zt']
 bolo_char['L_fll'] = PL.LoopGain(bolo_char['Zt'])
 settings.R_wire = 10.  # is warm wire, squid board to squid controller.
 bolo_char['Tbath'] = settings.t_bath
@@ -224,11 +236,10 @@ settings.elements_path = os.path.join(settings.base_path,
 #                 'outputs/%s_%s_elements_out.csv ' %(settings.freq, settings.version))  # data that gets saved.
 
 settings.bands_path = os.path.join(settings.base_path,
-                 'inputs/CMBP_bands_V2-monochroic.csv')  # csv of bands.
+                 'inputs/CMBP_bands_v4.csv')  # csv of bands.
 
 settings.FP_areas_path = os.path.join(settings.base_path,
-                 'inputs/FP_areas_%s.csv' %settings.version)  # csv of FP areas.
-
+                 'inputs/FP_areas_%s_curved_FP.csv' %settings.version)  # csv of FP areas.
 
 # unneeded stuff below this line.
 '''

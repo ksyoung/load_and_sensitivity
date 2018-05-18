@@ -85,6 +85,7 @@ def print_status(px_types, px_count, single_px_area, used_areas, band_areas):
 
   return
 
+
 def add_correlated_noise(results):
   # adds NET_array and pol_weight for correlated noise values
   # needs to be called after pixel numbers are calculated
@@ -96,17 +97,41 @@ def add_correlated_noise(results):
   # get px size -- calc N_airy
   c_lambda = 0.299792458 / results.nu  # wavelengths
   D_airy = 1.22*c_lambda*settings.f_number * 2  # equation is for radius of airy, x2 for diameter.
-  N_airy = (D_airy / results.D_px)**2. # really should have hex packing here.... I'm ignoring that.
+  N_airy = (D_airy / results.D_px)**2. * 0.9069 # 0.9 for hex packing.
   N_airy = np.array([1. if i < 1 else i for i in N_airy])
 
   results.corr_NET_array = np.sqrt(results.NET_array**2. + results.NET_bunch_all**2./results.num_bolo*(N_airy-1))
   results.corrCMB_NET_array = np.sqrt(results.NET_array**2. + results.NET_bunch_CMB**2./results.num_bolo*(N_airy-1))
 
   # NET_new**2 = NET_ar**2 + bose**2/N(N_airy-1)  
-  yrs2sec_deg2arcmin = np.sqrt(settings.sky_area * 3600. / ( 31557600.))
+  yrs2sec_deg2arcmin = np.sqrt(settings.sky_area * 3600. / ( 31557600.))  # sky area is in sq. deg.
   results.corr_pol_weight = results.corr_NET_array * yrs2sec_deg2arcmin  / np.sqrt(settings.mission_length) * np.sqrt(2.)
 
   return results
+
+def calc_array_noise(results):
+  # calculate per band sensitivity, mapping speed, and pol weight
+  results.NET_array = results.NET_total / np.sqrt(results.num_bolo)
+  results.map_speed = ((results.FWHM / 60.) / results.NET_array)**2.  ## FWHM**2 / NET **2 , deg^2 / (K^2 sec)
+  yrs2sec_deg2arcmin = np.sqrt(settings.sky_area * 3600. / ( 31557600.))
+  results.weight = results.NET_array * yrs2sec_deg2arcmin  / np.sqrt(settings.mission_length)  ## array_NET * sqrt(sky_area / time) K * arcmin
+  results.pol_weight = results.weight * np.sqrt(2.) ## extra root 2 for polarization data.
+
+  if settings.calc_correlated_noise:
+    results = add_correlated_noise(results)
+  return results
+
+
+def total_CMB_sense(results):
+  # takes px number and NET per pixel.
+  # gives final CMB sensitivity of current system.
+  
+  # sum 1/squares of noise, take sqrt, invert.
+  total_pol = 1./np.sqrt(np.sum(np.power(results.pol_weight,-2.)))
+  total_corrPol = 1./np.sqrt(np.sum(np.power(results.corr_pol_weight,-2.)))
+  print 'total uK arcmin uncorrelate:  %.2f' %(total_pol*1.e6)
+  print 'total uK arcmin correlated :  %.2f' %(total_corrPol*1.e6)
+  return total_pol, total_corrPol
 
 pixel_types = []
 for i in bands.loc[:,('pixel')]:
@@ -151,15 +176,17 @@ if settings.calc_N_px_by_area_csv:
    
     print '\nChange the px_count variable to change pixel numbers in a given band.\nThen continue (c) the program.\n'+\
           'If happy with distribution set variable change=False.\n'
-
-    pdb.set_trace()
-    
+  
     check_areas(px_count,px_areas,area_diffs)
  
-  # write px_count to full list corresponding to all bands.
-  for i,pixel in enumerate(pixel_types):
-    px_index = bands.index[bands.pixel==pixel]
-    results.num_bolo[px_index] = px_count[i] * 2
+    # write px_count to full list corresponding to all bands.
+    for i,pixel in enumerate(pixel_types):
+      px_index = bands.index[bands.pixel==pixel]
+      results.num_bolo[px_index] = px_count[i] * 2
+
+    results = calc_array_noise(results)
+
+    pdb.set_trace()
 
  
 elif settings.calc_N_px_rough: ## estimate N_px that may fit.
@@ -177,6 +204,8 @@ elif settings.calc_N_px_rough: ## estimate N_px that may fit.
   for i,pixel in enumerate(pixel_types):
     px_index = bands.index[bands.pixel==pixel]
     results.num_bolo[px_index] = px_count[i] * 2
+
+  results = calc_array_noise(results)
 
  
 else: # just use N_px from bands.csv.
@@ -196,8 +225,8 @@ else: # just use N_px from bands.csv.
 
   ######## 3 single band pixels hardcoded!!!  ###############
   # for G,H,I.  do even thirds at smallest area.
-  #area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
-  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*2)  # add in area for last 3 rows.
+  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  #area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*2)  # add in area for last 3 rows.
     
   used_areas = px_count*px_areas # calc areas to check fit.
 
@@ -216,25 +245,16 @@ else: # just use N_px from bands.csv.
     print '\nChange the px_count variable to change pixel numbers in a given band.\nThen continue (c) the program.\n'+\
           'If happy with distribution set variable change=False.\n'
 
-    pdb.set_trace()
-
-  for i,pixel in enumerate(pixel_types):
-    px_index = bands.index[bands.pixel==pixel]
-    results.num_bolo[px_index] = px_count[i] * 2
-
-
-
-# calculate per band sensitivity, mapping speed, and pol weight
-results.NET_array = results.NET_total / np.sqrt(results.num_bolo)
-results.map_speed = ((results.FWHM / 60.) / results.NET_array)**2.  ## FWHM**2 / NET **2 , deg^2 / (K^2 sec)
-yrs2sec_deg2arcmin = np.sqrt(settings.sky_area * 3600. / ( 31557600.))
-results.weight = results.NET_array * yrs2sec_deg2arcmin  / np.sqrt(settings.mission_length)  ## array_NET * sqrt(sky_area / time) K * arcmin
-results.pol_weight = results.weight * np.sqrt(2.) ## extra root 2 for polarization data.
-
-if settings.calc_correlated_noise:
-  results = add_correlated_noise(results)
+    for i,pixel in enumerate(pixel_types):
+      px_index = bands.index[bands.pixel==pixel]
+      results.num_bolo[px_index] = px_count[i] * 2
+    
+    results = calc_array_noise(results)
+    change=False
+    #pdb.set_trace()    
+    
 
 ## resave the thingies.
 results.to_csv(os.path.join(load_path, 'All_results_out.csv'), index=True)
 
-pdb.set_trace()
+#pdb.set_trace()

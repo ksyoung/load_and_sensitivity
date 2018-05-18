@@ -2,8 +2,10 @@
 '''
 Cleaned up mapping speed and loading codes.  Original was from Ben Westbrook.
 This is the stripped down version to do only what I need, but no more.
-Currently does noise per frequency.  Doesn't map vs pixel size also.  Just uses edge taper. Does include MCPs now.
-
+Currently does noise per frequency. 
+Does include MCPs now.
+Can calculate pixel size from edge taper or vice-versa
+can scan in edge taper to find best pixel size.
 
 
 Files important for this code:
@@ -98,12 +100,33 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
 
     # calc element parameters. emissivity.
     if ('lens' in elem) or ('Lens' in elem):
-      pass  # add code to get emissivity from loss tan.
+      if element_df.loss_tan[i] == 'PP':  # pull out polypropylene case so can have loss tan vary with frequency.
+        # hardcoded loss_tan!!  :-(  # 21 values for the 21 bands.  
+        # frequencies [20.8,  25,  30,  36,  43,     52,     62,     75,   90,  108,    129,    155,    186,  223,    268,  321,   385,     462,   555,   666,  799]
+        loss_tan =    np.array([5e-4,5e-4,5e-4,5e-4,5e-4, 5.8e-4, 6.4e-4, 7.2e-4, 8e-4, 7e-4, 6.6e-4, 6.4e-4, 6.2e-4, 6e-4, 5.8e-4, 6e-4, 9e-4,  13.5e-4, 20e-4, 31e-4, 50e-4]) / 5.  # reduce by 5 for 300 K to 4 K difference
+        # hardcoded thickness scaling as well!  Scale thickness by center wavelength of band.  Scale upper 3 bands by 1 number.  scaling is 1 at 150 GHz.  scaling is linear with wavelength.
+        thick_sc = [5.,  4.2,  5.,  4.2,  5., 4.2,  1.7,  1.4,   1.7,  1.4,  1.7,  1.4,  .56,  .47, .56,  .47, .56, .47, 0.225, 0.225,  0.225]
+        emissivity = 1-np.exp(-2*np.pi*element_df.opt_index[i] * loss_tan[location]
+                             * element_df.thickness[i] * thick_sc[location] / c_lambda)   # location is band we are on.
+        pdb.set_trace()
+      else:
+        # code to get emissivity from loss tan index and thickness.
+        emissivity = 1-np.exp(-2*np.pi*element_df.opt_index[i] * element_df.loss_tan[i]
+                             * element_df.thickness[i] / c_lambda)
     elif ('Mirror' in elem) or ('mirror' in elem):
-      pass # do scaling of emiss by root(Hz) as per Shaul.  Assuming tophat band, single emiss.
-      emissivity = element_df.emissivity[i]*np.sqrt(np.mean(band)/150e9)
+      if settings.emiss_rt_GHz:
+        # do scaling of emiss by root(Hz) as per Shaul.  Assuming tophat band, single emiss.
+        emissivity = element_df.emissivity[i]*np.sqrt(np.mean(band)/150e9)
+      else:
+        # fixed emissivity at all frequencies ala Planck HFI instrument paper. Ade 2011,https://doi.org/10.1051/0004-6361/201116486 
+        emissivity = element_df.emissivity[i]
+      #try:
+      #  emissivity = emissivity + settings.offset_emiss
+      #except AttributeError:
+      #  pass
     else:
       emissivity = element_df.emissivity[i]
+
     element_out_df.emissivity[i] = emissivity
 
     # calc efficiency (i.e. transmission through that layer) for element. save to new throughput frame
@@ -267,12 +290,27 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
   if settings.verbose:
     print full_text+noise_summary
 
+  ###########################################
+  # TDM readout noise calculated ala Roger O'brient. readout and johnson are both different.  
+  # will keep or toss various terms later as needed.
+
+  #nep_johnson_TDM, nep_shunt_TDM, NEP_alias_TDM = lf.TDM_readout_noise(nep_photon, nep_phonon, 
+  #                                                p_opt, t_c, settings.t_bath, G_dyn, 
+  #                                                settings.alpha, settings.n, settings.R_op_TDM, 
+  #                                                settings.Rs_op_TDM, settings.safety_factor, settings.C0,
+  #                                                settings.L_sq_nyq,)
+  
+  #pdb.set_trace()
       
   ##############################################
 
-  #pdb.set_trace()
+
   # get out franky noise that I need.  No trailing subscript = trusted code.  KY or FA means
-  # Karl's of Franky's calculations that are less trusted and not used in final product.
+  # Karl's or Franky's calculations that are less trusted and not used in final product.
+  #
+  # or can use TDM readout and johnson as a good alternative. fun times.
+
+
   nep_readout =  np.sum(np.array([noise['warm'], noise['cold']])**2.)**0.5 * \
                         1.e-12 / NP.Si(settings.dfmux_settings['Vb'], False, 
                                     settings.bolo_char['L'])
@@ -374,7 +412,8 @@ def calc_MCP_sizes(results_df, bolo_char_out_df, bands):
 
         ## based on length do soemthign --- # 3 cases, tri-chroic, bi-chroic, single color.
         if len(px_bands) == 3:
-          '''
+
+          '''                    
           # set low band to edge_dB
           results_df.loc[(px_bands.index[0]),('edge_dB')] = settings.edge_db
           # calc mid and upper bands
@@ -394,14 +433,25 @@ def calc_MCP_sizes(results_df, bolo_char_out_df, bands):
           #upper
           results_df.loc[(px_bands.index[2]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
                                                               bands.nu[px_bands.index[1]], bands.nu[px_bands.index[2]])
-          
+
 
         elif len(px_bands) == 2:
+          # set edge_dB between bands at geometric mean.
+          mid_freq = np.sqrt(bands.nu[px_bands.index[0]] * bands.nu[px_bands.index[1]])
+
+          # lower band
+          results_df.loc[(px_bands.index[0]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                              mid_freq, bands.nu[px_bands.index[0]])
+          # upper band
+          results_df.loc[(px_bands.index[1]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
+                                                              mid_freq, bands.nu[px_bands.index[1]])
+          '''
           # set lower band to edge_dB
           results_df.loc[(px_bands.index[0]),('edge_dB')] = settings.edge_db
           # calc edge_dB of upper band
           results_df.loc[(px_bands.index[1]),('edge_dB')] = lf.scale_db_between_bands(settings.edge_db, 
                                                               bands.nu[px_bands.index[0]], bands.nu[px_bands.index[1]])
+          '''
 
         elif len(px_bands) == 1:
           results_df.loc[(px_bands.index[0]),('edge_dB')] = settings.edge_db  ## indexed row by band # minus 1. diff or 0--20 or 1--21 in df.index and df.bands.
@@ -438,7 +488,7 @@ def run_bands_case(element_df, element_out_df, save_path):
     bolo_char_out_df.Band = settings.freq
 
   return results_df, bolo_char_out_df
-
+'''
 def add_NET_and_correlated_noise(results):
   # adds NET_array and pol_weight for correlated noise values
   # assumes a fixed area of diameter = 50*F*lambda.  Only run when optimizing pixel size.
@@ -474,7 +524,7 @@ def add_NET_and_correlated_noise(results):
   results.pol_weight = results.NET_array * yrs2sec_deg2arcmin  / np.sqrt(settings.mission_length) * np.sqrt(2.)
 
   return results
-
+'''
 
 # save path for data frames
 main_path = os.path.join(settings.base_path,'outputs/%s' %settings.version)
