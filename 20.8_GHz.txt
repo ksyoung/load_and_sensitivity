@@ -1,0 +1,110 @@
+1.4m_open_midstop, 20.8_GHz
+
+Bolometer            : 
+SQUID                : 
+Readout              : 
+
+DAN firmware         : True
+DAN parser           : False
+Bit Shift(0=classic) : 8
+FIR stage            : 6
+f_sampling           : 190.73
+Timestream length    : 0 pts, 0.0 s
+f_min for average    : nan Hz
+f_max for average    : nan Hz
+
+f_carrier            : 500000 Hz
+A_carrier            : 0.274
+G_carrier            : 1
+A_nuller             : 0.208
+G_nuller             : 0
+f_demod              : 500000 Hz
+G_demod              : 0
+V_bias               : 0.44 uV_RMS
+SQUID feedback loop  : 5000 ohm
+Frequency band       : 21 GHz
+Frequency band width : 5 GHz
+SQUID transimpedance : 320 ohm
+SQUID L              : 17.1
+Bolometer L          : 25.0
+R_leadlag            : 10 ohm
+T_bath               : 0.1 K
+
+Tc                   : 0.192 K
+T_bolo               : 0.192 K
+R_normal             : 1.33 ohm
+R                    : 1.0 ohm
+G                    : 6 pW/K
+gamma                : 0.494
+tau_etf              : 10.0 ms
+P_optical            : 0.1 pW
+
+SQUID noise                    :   4.950 pA/sqrt(Hz)
+SQUID ctrl 1st stage noise     :   3.969 pA/sqrt(Hz)
+20 ohms noise                  :   2.687 pA/sqrt(Hz)
+Feedback resistor noise        :   2.574 pA/sqrt(Hz)
+SQUID ctrl 2nd stage noise     :   0.346 pA/sqrt(Hz)
+Flux bias 50kOhm noise         :   0.814 pA/sqrt(Hz)
+Demod digitization stage noise :   0.514 pA/sqrt(Hz)
+Demod truncation noise         :   0.257 pA/sqrt(Hz)
+Carrier 1st stage noise        :   0.550 pA/sqrt(Hz)
+Carrier 2nd stage noise        :   0.143 pA/sqrt(Hz)
+50 Ohm bolo termination noise  :   0.470 pA/sqrt(Hz)
+30mOhm resistor noise          :   3.739 pA/sqrt(Hz)
+Carrier shot noise             :   0.549 pA/sqrt(Hz)
+Carrier digitization noise     :   0.137 pA/sqrt(Hz)
+Nuller 1st stage noise         :   0.513 pA/sqrt(Hz)
+Nuller 2nd stage noise         :   0.133 pA/sqrt(Hz)
+4x820 Ohm resitors noise       :   3.178 pA/sqrt(Hz)
+Nuller shot noise              :   0.462 pA/sqrt(Hz)
+Nuller digitization noise      :   0.128 pA/sqrt(Hz)
+Johnson noise                  :   4.609 pA/sqrt(Hz)
+Phonon noise                   :   7.517 pA/sqrt(Hz)
+Photon noise                   :   5.836 pA/sqrt(Hz)
+Photon bunching noise          :   5.490 pA/sqrt(Hz)
+
+readout              :   8.982 pA/sqrt(Hz)
+Johnson              :   4.609 pA/sqrt(Hz)
+phonon               :   7.517 pA/sqrt(Hz)
+photon               :   8.012 pA/sqrt(Hz)
+total                :  14.920 pA/sqrt(Hz)
+
+readout              :   2.877 aW/sqrt(Hz)
+Johnson              :   1.476 aW/sqrt(Hz)
+phonon               :   2.408 aW/sqrt(Hz)
+photon               :   2.567 aW/sqrt(Hz)
+total                :   4.780 aW/sqrt(Hz)
+
+
+                element emissivity temperature   power_emit transmission  \
+0               Pol_y/n          0           0            0          0.5   
+1  Signal_bolo_coupling          0        0.25            0          0.7   
+2            Optics Box          0           4            0            1   
+3                Mirror  0.0055857           4  2.82455e-15     0.994414   
+4                  Stop          1           4  5.05675e-13     0.901722   
+5                Mirror  0.0055857          30   2.3663e-14     0.994414   
+6                   CMB          1       2.725  3.23997e-13            1   
+
+     cum_eff power_absorb  nep_poisson    nep_bunch  
+0          1            0            0            0  
+1        0.5            0            0            0  
+2       0.35            0            0            0  
+3       0.35  9.88592e-16   1.6502e-19  1.37099e-20  
+4  0.0342053  1.72968e-14  6.90256e-19  2.39874e-19  
+5    0.31384  7.42639e-15  4.52423e-19  1.02986e-19  
+6   0.312087  1.01115e-13  1.66864e-18  1.40235e-18  
+Running :     20.8_GHz open_midstop
+spillover:  0.901721620256
+beam FWHM:  40.8775820854
+eff@ bolo:  0.312086693886
+illumin  :  0.898182233879
+total pow:  1.26826782282e-13
+all bunch:  1.75891070258e-18
+all poiss:  1.86888493203e-18
+all phot :  2.56641729826e-18
+all phon :  2.40849984037e-18
+all john :  1.42009283534e-18
+FA  read :  2.87724260394e-18
+KY  read :  2.15620779107e-18
+total NEP:  4.76262090585e-18
+total NET:  7.60002724185e-05
