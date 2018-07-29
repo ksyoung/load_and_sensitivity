@@ -250,8 +250,8 @@ else: # just use N_px from bands.csv.
       results.num_bolo[px_index] = px_count[i] * 2
     
     results = calc_array_noise(results)
-    change=False
-    #pdb.set_trace()    
+    #change=False
+    pdb.set_trace()    
     
 
 ## resave the thingies.
