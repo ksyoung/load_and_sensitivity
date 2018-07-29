@@ -108,7 +108,7 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
         thick_sc = [5.,  4.2,  5.,  4.2,  5., 4.2,  1.7,  1.4,   1.7,  1.4,  1.7,  1.4,  .56,  .47, .56,  .47, .56, .47, 0.225, 0.225,  0.225]
         emissivity = 1-np.exp(-2*np.pi*element_df.opt_index[i] * loss_tan[location]
                              * element_df.thickness[i] * thick_sc[location] / c_lambda)   # location is band we are on.
-        pdb.set_trace()
+        # pdb.set_trace()
       else:
         # code to get emissivity from loss tan index and thickness.
         emissivity = 1-np.exp(-2*np.pi*element_df.opt_index[i] * element_df.loss_tan[i]
