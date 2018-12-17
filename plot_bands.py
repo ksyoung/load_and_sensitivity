@@ -25,14 +25,19 @@ parser.add_option('-n', dest='height_is_num', action='store_true', default=False
 bands = pandas.read_csv(option.bands)
 
 # color vector
-colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan', 'tab:blue', 'tab:orange']
 
 # matching SW focal plane: 
-colors = ['#c0c0c0', '#00668f', '#49ff37', '#67cdff', '#0003ff', '#5c57ff', '#ff47f4', '#ff47f4', '#ff47f4']
+# colors = ['#c0c0c0', '#00668f', '#49ff37', '#67cdff', '#0003ff', '#5c57ff', '#ff47f4', '#ff47f4', '#ff47f4']
 
-SMALL_SIZE = 26
-MEDIUM_SIZE = 32
-BIGGER_SIZE = 44
+# SMALL_SIZE = 26
+# MEDIUM_SIZE = 32
+# BIGGER_SIZE = 44
+SMALL_SIZE = 13
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 22
+
+
 
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
@@ -44,11 +49,8 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 plt.rc('axes',linewidth=2)
 
-
-
 # initialize plot
-fig, ax = plt.subplots(figsize=(16,9))
-
+fig, ax = plt.subplots(figsize=(8,4.5))
 
 # sort out pixels
 pixel_types = []
@@ -57,11 +59,14 @@ for i in bands.loc[:,('pixel')]:
     pixel_types.append(i)
 pixel_types = np.array(pixel_types) ## later code works if it's an np array.
 
-height_is_num = True
+height_is_num = option.height_is_num
+
+
 
 if option.height_is_num:
   for i,pixel in enumerate(pixel_types):
-    if pixel in(['G','H','I']):
+    # if pixel in(['G','H','I']):
+    if pixel in(['I','J','K']):
       ax.bar(bands.nu_low[bands.pixel==pixel], bands.number[bands.pixel==pixel]*2., bands.width[bands.pixel==pixel], align='edge', color=colors[i], alpha=.8, ec='k')
     else:
       px_band = np.array([bands.nu_low[bands.pixel==pixel],bands.nu_high[bands.pixel==pixel]]).T # a nx2 array of nu_low, nu_high for the n bands in the pixel.
@@ -73,7 +78,8 @@ if option.height_is_num:
 
 else:
   for i,pixel in enumerate(pixel_types):
-    if pixel in(['G','H','I']):
+    # if pixel in(['G','H','I']):
+    if pixel in(['I','J','K']):
       ax.bar(bands.nu_low[bands.pixel==pixel], 1./(i%2/10.+1), bands.width[bands.pixel==pixel], align='edge', color=colors[i], alpha=.7, ec='k')
     else:
       px_band = np.array([bands.nu_low[bands.pixel==pixel],bands.nu_high[bands.pixel==pixel]]).T # a nx2 array of nu_low, nu_high for the n bands in the pixel.
@@ -97,7 +103,7 @@ ax.set_xlabel('Frequency, GHz')
 fig.tight_layout()
 
 fig.savefig('./outputs/plots/bands.png')
-fig.savefig('./outputs/plots/bands.tif',format='tiff', dpi=1200)
+# fig.savefig('./outputs/plots/bands.tif',format='tiff', dpi=1200)
 plt.show()
 
 # 

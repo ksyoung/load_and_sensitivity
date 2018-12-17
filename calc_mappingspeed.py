@@ -58,12 +58,12 @@ element_out_df = pandas.DataFrame(index=element_df.index, columns=[
 
 
 # wrap main calculation as function
-def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, results_df, band, c_freq, save_path, location=0):
+def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, results_df, bands, band, c_freq, save_path, location=0):
   # inputs are:
     # data frames (input, elements out, bolos out, results)
-    # band (this may change...)
+    # band, 2 element array. in Hz
     # center freq, a string for labeling.  really is band name.
-
+  
   c_lambda = 299792458 / np.mean(band)
     
   if settings.MCP:   # use pixel sizes and lambda to get spill and edge_taper. Need to determine how bands relate amongst pixels.
@@ -71,7 +71,9 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
       # calc spill from dB per pixel
       spill, illum = lf.get_spill_illum_effs(results_df.loc[location,('edge_dB')],settings.f_number)  
       theta_px = lf.theta_px_from_edge_db(results_df.loc[location,('edge_dB')],settings.f_number)
-      results_df.loc[location,('D_px')] = lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio)
+      # results_df.loc[location,('D_px')] = bands.loc[location,('D_px')] # lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio) decoupling diameter and dB for antenna array case.
+	  results_df.loc[location,('D_px')] = lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio)
+	  
 
     elif settings.use_D_px:
       # calc spill from D_px.
@@ -119,11 +121,22 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
         emissivity = element_df.emissivity[i]*np.sqrt(np.mean(band)/150e9)
       else:
         # fixed emissivity at all frequencies ala Planck HFI instrument paper. Ade 2011,https://doi.org/10.1051/0004-6361/201116486 
-        emissivity = element_df.emissivity[i]
-      #try:
-      #  emissivity = emissivity + settings.offset_emiss
-      #except AttributeError:
-      #  pass
+        emissivity = element_df.emissivity[i]		
+    elif ('ATM' in elem) or ('atm' in elem):  
+      # load data from atm code, orginally from Ben W.
+	  import atmospheric_calculator as ac
+	  
+	  ######################################   HARD CODED   ########################  atm file.
+	  
+	  atmosphere_data = ac.atmospheric_calculator('./inputs/LDB_34km_30deg_el.out',
+                                                    band[0], band[1])  # freqs in Hz.
+	  # print 'Atmosphere properteris are emissivity = %.4f, transmission = %.4f' %(atmosphere_data[0],atmosphere_data[1])
+	  # print 'only using emissivity, assuming R = 0. T = 1-E'
+	  # f = open('temp.txt', 'a')
+	  # f.write('%.2f - %.2f GHz, emiss = %.5f\n' %(band[0]*1e-9, band[1]*1e-9, atmosphere_data[0]))
+	  # f.close()
+	  
+	  emissivity = atmosphere_data[0]
     else:
       emissivity = element_df.emissivity[i]
 
@@ -149,24 +162,19 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
   # calc emitted power per element.  save to new throughput frame
   # calc NEP in detector per element.  (uses cum_eff)
   # assuming throughput = lambda ** 2 (in loading_functions.py)
-    if ('Mirror' in elem) or ('mirror' in elem):
-      # SHOULD change to emiss dependence on freq for alum. 
-      power_emit,pow_error = lf.power_emitted_per_element(element_df.temperature[i],
-                 emissivity, band)
-      # noises are NEP**2  !!!
-      poisson_nepsq, poi_err, bunch_nepsq, bunch_err = lf.NEP_photon_per_element(
-                   element_df.temperature[i], emissivity, band, element_out_df.cum_eff[i])
-    else:
-      power_emit,error = lf.power_emitted_per_element(element_df.temperature[i],
+    power_emit,error = lf.power_emitted_per_element(element_df.temperature[i],
                          emissivity, band)
-      poisson_nepsq, poi_err, bunch_nepsq, bunch_err = lf.NEP_photon_per_element(
+    poisson_nepsq, poi_err, bunch_nepsq, bunch_err = lf.NEP_photon_per_element(
                    element_df.temperature[i], emissivity, band, element_out_df.cum_eff[i])
 
     element_out_df.power_emit[i] = power_emit
+    # if 'ATM' in elem: 
+	  # print 'ATM power: (emit), (absorb)', power_emit, power_emit*element_out_df.cum_eff[i], band
+	  
     element_out_df.power_absorb[i] = power_emit*element_out_df.cum_eff[i]
     element_out_df.nep_poisson[i] = np.sqrt(poisson_nepsq)
     element_out_df.nep_bunch[i] = np.sqrt(bunch_nepsq)
-
+    
   ## last element calced is CMB.  save that term seperately
   NEP_bunch_CMB = element_out_df.nep_bunch[i]
 
@@ -478,12 +486,12 @@ def run_bands_case(element_df, element_out_df, save_path):
       band = np.array([bands.nu_low[i],bands.nu_high[i]])*1e9
       c_freq = '%g_GHz' %center_nu
       element_out_df, results_df, bolo_char_out_df = power_noise_calculation(element_df, element_out_df,
-                                   bolo_char_out_df, results_df, band, c_freq, save_path, location=i)
+                                   bolo_char_out_df, results_df, bands, band, c_freq, save_path, location=i)
 
   else:
     results_df, bolo_char_out_df = make_data_frames()
     element_out_df, results_df, bolo_char_out_df = power_noise_calculation(element_df, element_out_df, 
-                                 bolo_char_out_df, results_df, settings.band, settings.freq, save_path)
+                                 bolo_char_out_df, results_df, bands, settings.band, settings.freq, save_path)
 
     bolo_char_out_df.Band = settings.freq
 

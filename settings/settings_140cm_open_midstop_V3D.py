@@ -18,7 +18,7 @@ class Class(object):
 settings = Class()
 # Run time paramters
 settings.freq = 'All_GHz'
-settings.version = 'open_midstop_V3D_April2018_TDMtest'
+settings.version = 'open_midstop_V3D_April2018'
 settings.name = '1.4m_open_midstop'
 settings.verbose =  True # False #
 
@@ -56,7 +56,7 @@ settings.MCP =  True # False # assumes MCPs and finds pixel diameters, edge tape
 settings.diameter_to_waist_ratio = 2.95  #from Toki's thesis. 
 
 settings.use_edge_dB = True ## this means calculate pixel sizes from edge taper given earlier.
-settings.use_D_px = False ## use D_px from bands.csv import 
+settings.use_D_px = False ## use D_px from bands.csv import, calculate edge dB
 if settings.use_edge_dB and settings.use_D_px:
   print '\n use_edge_dB and use_D_px can\'t both be True!!\n\n'
   sys.exit()
@@ -237,9 +237,13 @@ settings.elements_path = os.path.join(settings.base_path,
 
 settings.bands_path = os.path.join(settings.base_path,
                  'inputs/CMBP_bands_v4.csv')  # csv of bands.
+                 # 'inputs/CMBP_bands_NIST_horn_coupled_dualchroic.csv')  # csv of bands.
+				 # 'inputs/CMBP_bands_single_color.csv')  # csv of bands.
 
 settings.FP_areas_path = os.path.join(settings.base_path,
                  'inputs/FP_areas_%s_curved_FP.csv' %settings.version)  # csv of FP areas.
+                 # 'inputs/FP_areas_%s_NIST_bands.csv' %settings.version)  # csv of FP areas.
+				 # 'inputs/FP_areas_%s_single_bands.csv' %settings.version)  # csv of FP areas.
 
 # unneeded stuff below this line.
 '''

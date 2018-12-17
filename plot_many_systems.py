@@ -107,13 +107,29 @@ for i in names:
   plot_col(data[i], 'NEP_photon',ax3,scale=1e18,marker='o',label='Photon')
   plot_col(data[i], 'NEP_phonon',ax3,scale=1e18,marker='o',label='Phonon')
   #plot_col(data[i], 'NEP_readout2',ax3,scale=1e18,marker='o',label='Readout')  
-  plot_col(data[i], 'NEP_TES',ax3,scale=1e18,marker='o',label='TES Johnson')  
-  plot_col(data[i], 'NEP_readout3',ax3,scale=1e18,marker='o',label='Readout')  
+  # plot_col(data[i], 'NEP_TES',ax3,scale=1e18,marker='o',label='TES Johnson')  
+  # plot_col(data[i], 'NEP_readout3',ax3,scale=1e18,marker='o',label='Readout')  
 
 
 ax3.legend(prop={'size':10})
 fig3.tight_layout()
 fig3.savefig('./outputs/plots/multi_system_NEP.png')
+
+## plot depth
+fig4,ax4 = plt.subplots(1)
+ax4.set_xlabel('Frequency, GHz')
+ax4.set_ylabel(r'Map Depth, $\mu$K arcmin')
+ax4.set_yscale('log')
+
+for i in names:
+  plot_col(data[i], 'corr_pol_weight',ax4,scale=1e6,marker='o',label=i)
+  
+# plot some range in a zoomed plot.
+
+ax4.legend(prop={'size':10})
+fig4.tight_layout()
+fig4.savefig('./outputs/plots/multi_system_NET.png')
+
 
 
 plt.show()

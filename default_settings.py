@@ -17,6 +17,7 @@ from settings.settings_140cm_open_midstop_V3D import settings
 #from settings.settings_120cm_cross_f25_Qi import settings
 #from settings.settings_EBEX_IDS_pixel import settings
 #from settings.settings_Jacques_test import settings
+#from settings.settings_MOO import settings
 
 
 settings = settings

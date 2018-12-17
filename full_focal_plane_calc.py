@@ -159,8 +159,9 @@ if settings.calc_N_px_by_area_csv:
   # how to deal with single band pixels?!?!??!?!?!?!?
   # not using most of the area anyway......
   # for G,H,I.  do even thirds at smallest area.
-  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
-  #area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/2]*2)  # add in area for last 2 rows.
+  # area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  # area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/2]*2)  # add in area for last 2 rows.
+  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/1]*1)  # add in area for last 1 rows.
   
   ##################
  
@@ -222,14 +223,15 @@ else: # just use N_px from bands.csv.
   ## get availible areas.
   FP_areas = pandas.read_csv(os.path.join(settings.FP_areas_path))
   area_diffs = -np.diff(FP_areas.area) * 0.9069   # area for each frequency. include hex pack factor
-
+  
   ######## 3 single band pixels hardcoded!!!  ###############
   # for G,H,I.  do even thirds at smallest area.
-  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
-  #area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*2)  # add in area for last 3 rows.
+  # area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*3)  # add in area for last 3 rows.
+  # area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/3]*2)  # add in area for last 2 rows.
+  area_diffs = np.append(area_diffs,[FP_areas.area[FP_areas.index[-1]]*0.9069/1]*1)  # add in area for last 1 rows.
     
   used_areas = px_count*px_areas # calc areas to check fit.
-
+  
   if any(used_areas > area_diffs):
     print '\n\t\tPossible warning!!\n Too many pixel in Band(s) %s\n' %', '.join(pixel_types[used_areas > area_diffs])
   change=True
