@@ -16,7 +16,7 @@ pywtl (for franky's readout noise)
 a csv of element inputs.
 a csv of band inputs (if doing multiple bands).
 
-
+Karl Young, U of M
 '''
 
 import os, sys
@@ -72,7 +72,7 @@ def power_noise_calculation(element_df, element_out_df, bolo_char_out_df, result
       spill, illum = lf.get_spill_illum_effs(results_df.loc[location,('edge_dB')],settings.f_number)  
       theta_px = lf.theta_px_from_edge_db(results_df.loc[location,('edge_dB')],settings.f_number)
       # results_df.loc[location,('D_px')] = bands.loc[location,('D_px')] # lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio) decoupling diameter and dB for antenna array case.
-	  results_df.loc[location,('D_px')] = lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio)
+      results_df.loc[location,('D_px')] = lf.get_D_px(c_lambda,theta_px,settings.diameter_to_waist_ratio)
 	  
 
     elif settings.use_D_px:

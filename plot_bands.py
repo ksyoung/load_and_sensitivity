@@ -5,7 +5,7 @@ import pandas
 import numpy as np
 #import scipy.integrate as scint
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from matplotlib import ticker
 import optparse
 import pdb
 
@@ -90,16 +90,21 @@ else:
   ax.set_ylabel('Arbitrary')
 
 ax.set_xscale('log')
-ax.set_xticks(np.round(bands.nu[::2]))
+#ax.set_xticks(np.round(bands.nu[::2]))
 ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
-plt.tick_params(axis='x', which='minor',bottom='off')
-plt.tick_params(axis='y', which='minor',left='off')
+ax.xaxis.set_minor_formatter(ticker.ScalarFormatter())
+#plt.tick_params(axis='x', which='minor',bottom='on')
+#plt.tick_params(axis='y', which='minor',left='off')
+#ax.ticklabel_format(set_scientific=False)
 
 # hide axis tick labels
 #ax.axes.yaxis.set_ticklabels([])
 
 #ax.set_ylim([0,1075])
 ax.set_xlabel('Frequency, GHz')
+
+#ax.axvline(251,ls='--',c='g')
+
 fig.tight_layout()
 
 fig.savefig('./outputs/plots/bands.png')

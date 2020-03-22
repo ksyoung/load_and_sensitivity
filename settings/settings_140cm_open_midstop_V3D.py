@@ -236,14 +236,16 @@ settings.elements_path = os.path.join(settings.base_path,
 #                 'outputs/%s_%s_elements_out.csv ' %(settings.freq, settings.version))  # data that gets saved.
 
 settings.bands_path = os.path.join(settings.base_path,
-                 'inputs/CMBP_bands_v4.csv')  # csv of bands.
+                 # 'inputs/CMBP_bands_v4.csv')  # csv of bands.
                  # 'inputs/CMBP_bands_NIST_horn_coupled_dualchroic.csv')  # csv of bands.
-				 # 'inputs/CMBP_bands_single_color.csv')  # csv of bands.
+				  # 'inputs/CMBP_bands_single_color.csv')  # csv of bands.
+				  'inputs/CMBP_bands_30prct_single_color.csv')  # csv of bands.
 
 settings.FP_areas_path = os.path.join(settings.base_path,
-                 'inputs/FP_areas_%s_curved_FP.csv' %settings.version)  # csv of FP areas.
+                 # 'inputs/FP_areas_%s_curved_FP.csv' %settings.version)  # csv of FP areas.
                  # 'inputs/FP_areas_%s_NIST_bands.csv' %settings.version)  # csv of FP areas.
-				 # 'inputs/FP_areas_%s_single_bands.csv' %settings.version)  # csv of FP areas.
+		         'inputs/FP_areas_%s_single_bands.csv' %settings.version)  # csv of FP areas.
+				 
 
 # unneeded stuff below this line.
 '''

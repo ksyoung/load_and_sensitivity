@@ -97,7 +97,7 @@ def calc_mirror_transmission(emiss150, band, metal='alum'):
 
 
 def calc_beam(D_m,edge_db,wavelength):
-  # approximation Karl found.  in Goldsmith's Quasioptical systmes p 139 (Shaul's copy.  From radio astro peeps.
+  # approximation Karl found.  in Goldsmith's Quasioptical systmes p 139 (Shaul's copy.)  From radio astro peeps.
   FWHM_rad = (1.02 + 0.0135*edge_db) * wavelength/(D_m)   #in radians 
   FWHM =  FWHM_rad*(180.0/np.pi)*60 #convert to arcminutes
   return FWHM

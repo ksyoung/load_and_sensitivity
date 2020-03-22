@@ -75,13 +75,15 @@ def check_areas(px_count,px_areas,area_diffs):
   else:
     print 'Total area FAILS.\n\tAvailible:  %.3f\n\t     Used:  %.3f\n\n' %(np.sum(area_diffs),np.sum(used_areas))
 
-  return
+  return sum_used_A, sum_fp_areas
 
 def print_status(px_types, px_count, single_px_area, used_areas, band_areas):
   # display current state of pixels.
   print 'Current pixel counts and areas:\n'
-  table = [row for row in zip(px_types,px_count,single_px_area,used_areas,band_areas)]
-  print tabulate(table, headers=['pixel type', 'count','area of pixel', 'area used', 'area availible'],tablefmt='orgtbl') 
+  sum_used_A = np.flipud(np.cumsum(np.flipud(used_areas)))
+  sum_fp_areas = np.flipud(np.cumsum(np.flipud(band_areas)))
+  table = [row for row in zip(px_types,px_count,single_px_area,used_areas,band_areas, sum_used_A, sum_fp_areas)]
+  print tabulate(table, headers=['pixel type', 'count','area of pixel', 'area used', 'area availible', 'sum used', 'sum availible'],tablefmt='orgtbl') 
 
   return
 

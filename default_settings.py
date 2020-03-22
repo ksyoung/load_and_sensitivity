@@ -18,6 +18,9 @@ from settings.settings_140cm_open_midstop_V3D import settings
 #from settings.settings_EBEX_IDS_pixel import settings
 #from settings.settings_Jacques_test import settings
 #from settings.settings_MOO import settings
+#from settings.settings_IDS_MOO import settings
+from settings.settings_IDS_2018 import settings
+from settings.settings_actpol_bathTemp import settings
 
 
 settings = settings
