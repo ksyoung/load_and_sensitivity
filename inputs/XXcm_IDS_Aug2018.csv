@@ -1,0 +1,18 @@
+element,reflect_loss,emissivity,loss_tan,opt_index,thickness,temperature
+Pol_y/n,0.5,0,0,0,0,0
+Signal_bolo_coupling,0.5,0,0,0,0,0.25
+Optics Box,0,0,0,0,0,1.5
+Camera lens,0.02,0,1.00E-05,3.4,0.015,1.5
+Pupil_Lens_1,0.02,0,1.00E-05,3.4,0.015,1.5
+LyotStop,0,1,,0,0,1.5
+HWP__lens,0,0,1.00E-04,3.2,0.015,20
+LPE2b_lens,0.02,0,4.00E-04,1.5,0.0015,4
+Field_Lens,0.02,0,1.00E-05,3.4,0.015,9
+Mirror,0,0.0007,0,0,0,10
+LPE2_lens,0.02,0,4.00E-04,1.5,0.0014,20
+LPE1_lens,0.02,0,4.00E-04,1.5,0.001,95
+alumina_lens,0.02,0,4.00E-04,3.1,0.0016,85
+window_lens,0.02,0,1.00E-04,1.52,0.002,263
+Mirror,0,0.0007,0,0,0,263
+ATM,0,0,0,0,0,277
+CMB,0,1,0.00E+00,0,0,2.725
